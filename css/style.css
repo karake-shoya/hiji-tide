@@ -83,6 +83,18 @@ body {
   padding-bottom: calc(90px + env(safe-area-inset-bottom));
   overscroll-behavior-y: none;
 }
+/* 浮かせたタブの下の隙間から本文が半端にのぞくので、地色でぼかして隠す */
+body::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(26px + env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, var(--bg) 62%);
+  pointer-events: none;
+  z-index: 24;
+}
 .wrap {
   padding: 0 16px;
 }
