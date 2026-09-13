@@ -3,12 +3,17 @@
 import { tide } from "./tide.js";
 import { fmt } from "./format.js";
 
+/** 満干潮の時刻ラベル（"22:30"）のおよその半幅 */
+const LABEL_HALF = 17;
+
 const W = 360,
   H = 230,
   PT = 22,
   PB = 30,
-  PL = 6,
-  PR = 6;
+  // 🔴 左右の余白はラベルの半幅より広く取る。狭いと 0時台・24時直前の極値でラベルが枠を
+  //    はみ出し、枠内に押し込むと点から離れて隣の極値の時刻に見える（2026-09-19 の 23:58）
+  PL = LABEL_HALF + 7,
+  PR = LABEL_HALF + 7;
 
 /** グラフ内の x 座標 ⇔ 時刻の相互変換 */
 const xOf = (d, ms) => PL + ((ms - d.start) / 86400000) * (W - PL - PR);
@@ -69,8 +74,9 @@ export function drawChart(d, slots) {
       y = Y(e.v);
     const up = e.type === "hi";
     s += `<circle cx="${x}" cy="${y}" r="3.6" fill="var(--${up ? "rise" : "fall"})"/>`;
-    const tx = Math.max(24, Math.min(W - 24, x));
-    s += `<text x="${tx}" y="${up ? y - 10 : y + 19}" fill="var(--${up ? "rise" : "fall"})" font-size="11.5" font-weight="700" text-anchor="middle">${fmt(e.ms)}</text>`;
+    // 時刻は必ず点の真上（真下）に置く。左右の余白がラベルの半幅より広いので、
+    // 端でもはみ出さず、ずらす必要がない
+    s += `<text x="${x.toFixed(1)}" y="${up ? y - 10 : y + 19}" fill="var(--${up ? "rise" : "fall"})" font-size="11.5" font-weight="700" text-anchor="middle">${fmt(e.ms)}</text>`;
   }
 
   // 日の出・日の入り
