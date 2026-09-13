@@ -30,6 +30,7 @@
 | `js/main.js` | 起動と配線 |
 | `api/news.js` | 釣りニュースの RSS を中継する Vercel Function（CommonJS） |
 | `sw.js` / `manifest.webmanifest` | 圏外でも開くための Service Worker と PWA 設定 |
+| `icons/og.png` | SNS に貼ったときの画像（1200x630）。元は `tools/og.html` |
 | `test/` | 回帰テスト |
 
 Vercel のフレームワークプリセットは Other、ビルドコマンドなし、出力はルート。
@@ -186,6 +187,19 @@ TSURI HACK は[著作権ページ](https://tsurihack.com/copyright)で引用の�
   書き足しの漏れは `test/shell.test.js` が落とす（`VERSION` の上げ忘れまでは見ていない）。
 - ⚠ この形にする前は `css` と `js` もキャッシュ優先だった。直したものが実機に届くまで2〜3回ひらき直す必要があり、実用にならなかった（2026-09-13 に実測）。
 - ⚠ ブラウザによってはローカル環境で Service Worker を登録できない。オフライン動作の確認は本番で行う。
+
+## SNS に貼ったときの画像
+
+`icons/og.png`（1200x630）を `og:image` に指定してある。`twitter:card` は `summary_large_image`。
+
+- 絵は `tools/og.html` が正。潮位カーブは 2026年9月13日（大潮・干満差179cm）の**実際の推算**で、金色の帯はその日いちばんの釣りどき（04:44–07:34）。数字を描き変えるときは `js/tide.js` から作り直す。
+- PNG は Chrome のヘッドレスで書き出す。依存パッケージは増やさない。
+
+  ```bash
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --window-size=1200,630 --screenshot=icons/og.png "file://$PWD/tools/og.html"
+  ```
+
+- ⚠ **画像を差し替えても SNS 側のキャッシュはすぐには変わらない。** 各社のデバッガで再取得させる。
 
 ## 精度
 
