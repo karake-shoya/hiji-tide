@@ -98,6 +98,11 @@ export function drawChart(d, slots) {
   return { markup: s, Y, yMin, yMax };
 }
 
+// いまグラフを指でなぞっている最中かどうか。
+// なぞっている間に SVG を作り直すと指の追従が切れるので、呼び出し側が再描画を見送るのに使う
+let scrubbing = false;
+export const isScrubbing = () => scrubbing;
+
 /**
  * グラフを指でなぞると、その時刻の潮位を読めるようにする。
  * @param {HTMLElement} box グラフを入れた要素
@@ -116,8 +121,6 @@ export function attachScrub(box, d, Y, onRead) {
     return ((clientX - r.left) / r.width) * W;
   };
 
-  let active = false;
-
   const move = (clientX) => {
     const x = Math.max(PL, Math.min(W - PR, toViewX(clientX)));
     const ms = msOf(d, x);
@@ -131,19 +134,19 @@ export function attachScrub(box, d, Y, onRead) {
   };
 
   const end = () => {
-    if (!active) return;
-    active = false;
+    if (!scrubbing) return;
+    scrubbing = false;
     g.style.display = "none";
     onRead(null);
   };
 
   svg.addEventListener("pointerdown", (e) => {
-    active = true;
+    scrubbing = true;
     svg.setPointerCapture?.(e.pointerId);
     move(e.clientX);
   });
   svg.addEventListener("pointermove", (e) => {
-    if (active) move(e.clientX);
+    if (scrubbing) move(e.clientX);
   });
   svg.addEventListener("pointerup", end);
   svg.addEventListener("pointercancel", end);

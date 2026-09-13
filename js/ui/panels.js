@@ -4,8 +4,7 @@ import { FISH, fishOfMonth } from "../data/fish.js";
 import { TERMS } from "../data/terms.js";
 import { GEAR, GEAR_GROUPS } from "../data/gear.js";
 import * as store from "../store.js";
-import { escapeHtml } from "./view.js";
-import { WD } from "../format.js";
+import { WD, escapeHtml } from "../format.js";
 
 /* ===== いま釣れる魚 ===== */
 const fishPanel = {

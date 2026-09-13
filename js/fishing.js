@@ -153,9 +153,9 @@ const SOON_MS = 90 * 60000;
 
 /**
  * いま釣りどきかどうか。今日を表示しているときだけ意味を持つ。
- * 🔴 新しい採点基準は作らない。dayData が付けた score と bestSlots の区間をそのまま使う。
+ * 🔴 新しい採点基準は作らない。bestSlots が出した区間をそのまま3段階に落とすだけ。
  *
- * @returns {{level:"go"|"soon"|"rest", score:number, reasons:string[], current:object|null,
+ * @returns {{level:"go"|"soon"|"rest", reasons:string[], current:object|null,
  *            next:object|null, msToNext:number|null, endsInMs:number|null}}
  */
 export function nowVerdict(d, slots, weak, nowMs = Date.now()) {
@@ -163,30 +163,11 @@ export function nowVerdict(d, slots, weak, nowMs = Date.now()) {
   const next = slots.find((s) => s.from > nowMs) || null;
   const msToNext = next ? next.from - nowMs : null;
 
-  // いちばん近い採点済みの点のスコアを拾う（採点は2分刻み）
-  let score = 0;
-  let best = Infinity;
-  for (const p of d.scored) {
-    const gap = Math.abs(p.ms - nowMs);
-    if (gap < best) {
-      best = gap;
-      score = p.score;
-    }
-  }
-
   if (current) {
-    return {
-      level: "go",
-      score,
-      reasons: slotReasons(d, current, weak),
-      current,
-      next,
-      msToNext,
-      endsInMs: current.to - nowMs,
-    };
+    return { level: "go", reasons: slotReasons(d, current, weak), current, next, msToNext, endsInMs: current.to - nowMs };
   }
   if (next && msToNext <= SOON_MS) {
-    return { level: "soon", score, reasons: slotReasons(d, next, weak), current: null, next, msToNext, endsInMs: null };
+    return { level: "soon", reasons: slotReasons(d, next, weak), current: null, next, msToNext, endsInMs: null };
   }
-  return { level: "rest", score, reasons: [], current: null, next, msToNext, endsInMs: null };
+  return { level: "rest", reasons: [], current: null, next, msToNext, endsInMs: null };
 }

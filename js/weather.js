@@ -72,8 +72,12 @@ export const cachedWeather = (iso) => cache.get(iso);
 
 const hourMs = (t) => Date.parse(t + ":00+09:00");
 
-/** 区間 from〜to に重なる時刻の平均。データが無い項目は null */
-export function avgOver(h, from, to) {
+/**
+ * 区間 from〜to に重なる時刻の天気をまとめる。データが無い項目は null。
+ * ⚠ 風と気温は平均だが、**降水確率だけは区間内の最大値**を返す。
+ *    3時間のうち1時間だけ100%の区間を「平均33%」と出すと、雨を見落とすため。
+ */
+export function conditionsOver(h, from, to) {
   let ws = 0,
     wn = 0,
     ts = 0,

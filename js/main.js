@@ -3,7 +3,8 @@
 import { dayData, bestSlots } from "./fishing.js";
 import { tideName } from "./astro.js";
 import { jstMidnight, isoJst, jstParts, dateFromQuery, parseIsoJst, WD } from "./format.js";
-import { loadWeather, cachedWeather, avgOver } from "./weather.js";
+import { loadWeather, cachedWeather } from "./weather.js";
+import { isScrubbing } from "./chart.js";
 import { loadNews } from "./news.js";
 import { initChrome, openPanel } from "./ui/menu.js";
 import * as view from "./ui/view.js";
@@ -30,7 +31,7 @@ function updateWeather(d) {
         view.renderWeather(h);
         weatherShownFor = iso;
       }
-      view.annotateSlots(h, avgOver); // 釣りどきは毎回描き直されるので毎回添える
+      view.annotateSlots(h); // 釣りどきは毎回描き直されるので毎回添える
       sec.hidden = false;
     })
     .catch(() => {});
@@ -100,8 +101,10 @@ render();
 
 loadNews().then(view.renderNews);
 
-// 今日を見ているときだけ、1分ごとに「いま」の位置と判定を描き直す
+// 今日を見ているときだけ、1分ごとに「いま」の位置と判定を描き直す。
+// グラフをなぞっている間は描き直さない（SVG を作り直すと指の追従が切れるため）
 setInterval(() => {
+  if (isScrubbing()) return;
   if (viewDate.getTime() === jstMidnight(new Date()).getTime()) render();
 }, 60000);
 

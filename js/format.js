@@ -1,4 +1,4 @@
-// 日付・時刻の整形。ページは常に日本時間で動くので、UTC のメソッドに9時間足して扱う。
+// 表示用の整形。日付と時刻は常に日本時間で扱う（UTC のメソッドに9時間足す）。
 
 export const WD = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -54,3 +54,8 @@ export function durationText(mins) {
 
 /** ミリ秒 → "あと1時間38分" 相当の短い表記 */
 export const untilText = (ms) => durationText(Math.max(0, Math.round(ms / 60000)));
+
+/** 外部・利用者に由来する文字列を HTML に埋める前に無害化する */
+export function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
