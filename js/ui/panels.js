@@ -3,6 +3,7 @@
 import { FISH, fishOfMonth } from "../data/fish.js";
 import { TERMS } from "../data/terms.js";
 import { GEAR, GEAR_GROUPS } from "../data/gear.js";
+import { weekPanel } from "./week.js";
 import * as store from "../store.js";
 import { WD, escapeHtml } from "../format.js";
 
@@ -242,4 +243,4 @@ const morePanel = {
   },
 };
 
-export const PANELS = { fish: fishPanel, gear: gearPanel, log: logPanel, terms: termsPanel, about: aboutPanel, more: morePanel };
+export const PANELS = { week: weekPanel, fish: fishPanel, gear: gearPanel, log: logPanel, terms: termsPanel, about: aboutPanel, more: morePanel };

@@ -4,8 +4,9 @@
 // 🔴 css/ か js/ にファイルを足したら SHELL に書き足し、VERSION を1つ上げること。
 //    中身を変えただけなら VERSION はそのままでよい（css と js はネットワーク優先で配るので、
 //    次に開いたときに最新が出る）。
+//    書き足しの漏れは test/shell.test.js が落とす（VERSION の上げ忘れまでは見ていない）。
 
-const VERSION = "v4";
+const VERSION = "v5";
 
 /** ネットワークを待つ上限。これを過ぎたらキャッシュで出す（釣り場の弱い電波で待たされないため） */
 const NET_TIMEOUT = 2500;
@@ -36,6 +37,7 @@ const SHELL = [
   "/js/ui/view.js",
   "/js/ui/nav.js",
   "/js/ui/panels.js",
+  "/js/ui/week.js",
 ];
 
 self.addEventListener("install", (e) => {

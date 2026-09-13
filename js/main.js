@@ -79,6 +79,11 @@ function context() {
     tideName: tideName(new Date(d.start + 12 * 3600000)),
     range: d.range,
     maxFlow: d.maxFlow,
+    // 週の一覧から日付を動かす口。書式の違う値は無視する
+    goto: (iso) => {
+      const dt = parseIsoJst(iso);
+      if (dt) goto(dt);
+    },
   };
 }
 

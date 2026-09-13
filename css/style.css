@@ -674,7 +674,7 @@ td.tm {
   max-width: 536px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   backdrop-filter: blur(18px);
   border: 1px solid var(--line);
@@ -697,7 +697,8 @@ td.tm {
 .tabbar button .ic {
   font-size: 22px;
   line-height: 1.15;
-  padding: 2px 16px;
+  /* タブが5つなので左右は詰める。375px 幅でも隣とぶつからない */
+  padding: 2px 12px;
   border-radius: 999px;
   /* 選ばれていないタブの絵文字は色を落として、いまどこにいるかを分かりやすくする */
   filter: grayscale(1) opacity(0.65);
@@ -715,10 +716,76 @@ td.tm {
 }
 
 /* ===== ビューの切り替え ===== */
+#viewWeek,
 #viewLog,
 #viewFish,
 #viewMore {
   padding-top: 16px;
+}
+
+/* ===== 週の一覧 ===== */
+.weeklist {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.weekrow {
+  width: 100%;
+  display: grid;
+  gap: 3px;
+  padding: 13px 16px;
+  background: var(--surface);
+  text-align: left;
+}
+.weekrow:active {
+  background: var(--surface-2);
+}
+/* いま見ている日。左の縁で示す */
+.weekrow[aria-current="date"] {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.weekrow .wday {
+  font-size: 16px;
+  font-weight: 700;
+}
+.weekrow .wtoday {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+  font-size: 11.5px;
+  font-weight: 700;
+  vertical-align: 2px;
+}
+.weekrow .wmeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.weekrow .wt {
+  color: var(--gold);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.weekrow .wt .len {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.weekrow .wt.none {
+  color: var(--muted);
+  font-weight: 600;
+}
+/* 突出した時合が無い日は、時間帯だけ薄くする（日付と潮回りは読ませる） */
+.weekrow.sub .wt {
+  opacity: 0.62;
 }
 
 /* その他タブの一覧 */

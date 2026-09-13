@@ -9,7 +9,7 @@ import { getTheme, setTheme } from "../store.js";
 
 const $ = (id) => document.getElementById(id);
 
-const VIEWS = { tide: "viewTide", log: "viewLog", fish: "viewFish", more: "viewMore" };
+const VIEWS = { tide: "viewTide", week: "viewWeek", log: "viewLog", fish: "viewFish", more: "viewMore" };
 const THEME_COLOR = { dark: "#062029", bright: "#f4f8f8" };
 
 let getContext = () => ({});
@@ -129,6 +129,14 @@ export function initNav(provider) {
 
   // 押せるものは動的に増えるので、まとめて拾う
   document.addEventListener("click", (e) => {
+    // 週の一覧から、その日の潮へ移る
+    const day = e.target.closest("[data-goto]");
+    if (day) {
+      showTab("tide"); // 先に切り替える。隠れた週タブを描き直さずに済む
+      getContext().goto?.(day.dataset.goto);
+      return;
+    }
+
     const tab = e.target.closest("[data-tab],[data-go]");
     if (tab) return showTab(tab.dataset.tab || tab.dataset.go);
 
