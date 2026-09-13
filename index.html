@@ -4,782 +4,132 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>日出の潮 | 大分県日出町の潮見表と釣りどき</title>
-<meta name="description" content="大分県日出町（別府湾）の満潮・干潮と、潮の動き・マズメから割り出した釣りどきの時間帯。日付を選ぶとその日の潮位カーブと時合が出ます。">
+<meta name="description" content="大分県日出町（別府湾）の満潮・干潮と、潮の動き・マズメから割り出した釣りどきの時間帯。いま行くべきかが一目で分かります。釣りを始めたばかりの方向け。">
 <link rel="canonical" href="https://hiji-tide.vercel.app/">
-<meta name="theme-color" content="#062029">
+<meta name="theme-color" content="#062029" id="themeColor">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://hiji-tide.vercel.app/">
 <meta property="og:title" content="日出の潮 | 大分県日出町の潮見表と釣りどき">
-<meta property="og:description" content="別府湾の満潮・干潮と、潮の動き・マズメから割り出した釣りどきの時間帯。">
+<meta property="og:description" content="別府湾の満潮・干潮と、潮とマズメから見た釣りどき。いま行くべきかが一目で分かります。">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23062029'/%3E%3Cpath d='M2 20c4 0 4-5 8-5s4 5 8 5 4-5 8-5 4 5 8 5' fill='none' stroke='%2346B8AC' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='9' r='3.2' fill='%23F0B429'/%3E%3C/svg%3E">
-<style>
-:root{
-  --abyss:#062029;
-  --deep:#0A2F3A;
-  --panel:#11414F;
-  --line:#1D5566;
-  --aqua:#46B8AC;
-  --aqua-dim:#2A7C79;
-  --gold:#F0B429;
-  --gold-dim:#7A5C1A;
-  --ink:#E6F0EF;
-  --muted:#8FB0B4;
-  --rise:#7FD1C4;
-  --fall:#79A8D8;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:100%}
-body{
-  background:var(--abyss);
-  color:var(--ink);
-  font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;
-  font-variant-numeric:tabular-nums;
-  line-height:1.6;
-  padding:0 0 48px;
-  max-width:560px;margin:0 auto;
-}
-.wrap{padding:0 18px}
-
-/* ---- 日付ナビ ---- */
-.datebar{
-  display:flex;align-items:center;gap:8px;
-  padding:14px 18px 10px;
-  position:sticky;top:0;z-index:5;
-  background:linear-gradient(var(--abyss) 70%,rgba(6,32,41,0));
-}
-.datebar button{
-  background:var(--panel);color:var(--ink);border:1px solid var(--line);
-  border-radius:10px;width:40px;height:40px;font-size:17px;cursor:pointer;
-}
-.datebar button:active{background:var(--line)}
-.datebar .today{width:auto;padding:0 14px;font-size:14px}
-#dateLabel{flex:1;text-align:center;font-size:16px;font-weight:600}
-#dateLabel small{display:block;font-size:12px;color:var(--muted);font-weight:400}
-input[type=date]{
-  background:var(--panel);border:1px solid var(--line);color:var(--ink);
-  border-radius:10px;padding:8px;font-size:14px;width:100%;margin-top:8px;
-  font-family:inherit;
-}
-
-/* ---- ヒーロー ---- */
-.hero{
-  padding:8px 18px 20px;
-}
-.state{
-  font-size:15px;color:var(--muted);
-}
-.state b{color:var(--ink);font-weight:600}
-.big{
-  font-size:46px;line-height:1.1;font-weight:700;letter-spacing:-0.02em;
-  margin:2px 0 4px;
-}
-.big .unit{font-size:18px;font-weight:500;color:var(--muted);margin-left:4px}
-.next{font-size:14px;color:var(--muted)}
-.next b{color:var(--rise);font-weight:600}
-
-/* ---- グラフ ---- */
-.chart{margin:6px 0 22px}
-svg{display:block;width:100%;height:auto;overflow:visible}
-.legend{
-  display:flex;gap:14px;font-size:11.5px;color:var(--muted);
-  padding:6px 2px 0;flex-wrap:wrap;
-}
-.swatch{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:5px}
-
-/* ---- セクション ---- */
-h2{
-  font-size:13px;font-weight:600;color:var(--muted);
-  margin:26px 0 10px;
-  display:flex;align-items:center;gap:10px;
-}
-h2::after{content:"";flex:1;height:1px;background:var(--line)}
-
-/* ---- ベストタイム ---- */
-.slot{
-  border-left:3px solid var(--gold);
-  background:linear-gradient(90deg,rgba(240,180,41,.10),rgba(240,180,41,0));
-  padding:11px 14px;border-radius:0 10px 10px 0;margin-bottom:10px;
-}
-.slot .t{font-size:19px;font-weight:700;letter-spacing:-0.01em}
-.slot .why{font-size:13px;color:var(--muted);margin-top:2px}
-.slot.sub{border-left-color:var(--aqua-dim);background:linear-gradient(90deg,rgba(70,184,172,.08),rgba(70,184,172,0))}
-.empty{color:var(--muted);font-size:14px;padding:8px 0}
-
-/* ---- 潮位表 ---- */
-table{width:100%;border-collapse:collapse;font-size:15px}
-td,th{padding:9px 4px;border-bottom:1px solid var(--line);text-align:left}
-th{font-size:12px;color:var(--muted);font-weight:500;border-bottom-color:var(--line)}
-td.num{text-align:right;color:var(--muted)}
-.tag{font-size:12px;padding:2px 8px;border-radius:999px;font-weight:600}
-.tag.hi{background:rgba(127,209,196,.15);color:var(--rise)}
-.tag.lo{background:rgba(121,168,216,.15);color:var(--fall)}
-
-/* ---- 日の強弱バッジ ---- */
-.badge{font-size:11.5px;padding:2px 9px;border-radius:999px;font-weight:600;white-space:nowrap}
-h2 .badge{order:1}  /* ::after の区切り線より右に置く */
-.badge.strong{background:rgba(240,180,41,.16);color:var(--gold)}
-.badge.mid{background:rgba(70,184,172,.14);color:var(--aqua)}
-.badge.calm{background:rgba(143,176,180,.12);color:var(--muted)}
-
-/* ---- メタ ---- */
-.meta{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border-radius:12px;overflow:hidden}
-.meta div{background:var(--deep);padding:12px 14px}
-.meta dt{font-size:11.5px;color:var(--muted)}
-.meta dd{font-size:17px;font-weight:600;margin-top:1px}
-
-/* ---- 風 ---- */
-.wind{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-radius:12px;overflow:hidden}
-.wind div{background:var(--deep);padding:9px 4px;text-align:center}
-.wind .h{font-size:11px;color:var(--muted)}
-.wind .v{font-size:17px;font-weight:700;letter-spacing:-0.01em;margin-top:1px}
-.wind .v small{font-size:10.5px;font-weight:500;color:var(--muted);margin-left:1px}
-.wind .d{font-size:11px;color:var(--muted);margin-top:1px}
-.wind .v.strong{color:var(--gold)}
-.wind .v.mid{color:var(--aqua)}
-.windNote{font-size:11.5px;color:var(--muted);padding:7px 2px 0}
-
-/* ---- ニュース ---- */
-.news{list-style:none}
-.news li{border-bottom:1px solid var(--line)}
-.news li:last-child{border-bottom:none}
-.news a{display:block;padding:11px 2px;color:var(--ink);text-decoration:none;font-size:14px;line-height:1.5}
-.news a:active{color:var(--aqua)}
-.news .m{font-size:11.5px;color:var(--muted);margin-top:3px}
-
-/* ---- 用語 ---- */
-.terms summary{
-  cursor:pointer;color:var(--aqua);font-size:13px;
-  padding:10px 14px;background:var(--deep);border:1px solid var(--line);border-radius:10px;
-  list-style:none;
-}
-.terms summary::-webkit-details-marker{display:none}
-.terms summary::after{content:" ▾";color:var(--muted)}
-.terms[open] summary{border-radius:10px 10px 0 0;border-bottom:none}
-.terms[open] summary::after{content:" ▴"}
-.terms .body{
-  background:var(--deep);
-  border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;
-  padding:4px 14px 14px;font-size:13.5px;line-height:1.75;color:var(--muted);
-}
-.terms dt{color:var(--ink);font-weight:600;margin-top:13px}
-.terms dd{margin-top:1px}
-.terms b{color:#B9CFD1;font-weight:600}
-
-footer{
-  font-size:11.5px;color:var(--muted);line-height:1.7;
-  margin-top:28px;padding-top:16px;border-top:1px solid var(--line);
-}
-footer b{color:#B9CFD1;font-weight:600}
-</style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="日出の潮">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="stylesheet" href="/css/style.css">
+<script type="module" src="/js/main.js"></script>
 </head>
 <body>
 
-<header class="wrap" style="padding-top:20px">
-  <div style="font-size:22px;font-weight:700;letter-spacing:-0.01em">日出の潮</div>
-  <p style="font-size:13px;color:var(--muted);margin-top:1px">大分県日出町・別府湾の潮見表と、潮とマズメから見た釣りどき</p>
+<header class="topbar">
+  <div class="brand">日出の潮<span>大分県日出町・別府湾</span></div>
+  <button class="icon-btn" id="menuBtn" aria-label="メニューを開く" aria-expanded="false" aria-controls="drawer">☰</button>
 </header>
 
-<div class="datebar">
-  <button id="prev" aria-label="前の日">‹</button>
-  <div id="dateLabel"></div>
-  <button id="next" aria-label="次の日">›</button>
-  <button class="today" id="todayBtn">今日</button>
-</div>
-<div class="wrap"><input type="date" id="picker"></div>
+<noscript>
+  <p style="padding:16px;line-height:1.8">このページは潮位をブラウザの中で計算して表示します。JavaScript を有効にしてください。</p>
+</noscript>
 
-<div class="hero">
-  <div class="state" id="state"></div>
-  <div class="big" id="level"></div>
-  <div class="next" id="nextEvent"></div>
-</div>
+<!-- いま行くべきか -->
+<section class="verdict" id="verdict" aria-live="polite"></section>
+<div id="recall"></div>
 
-<div class="wrap">
-  <div class="chart" id="chart"></div>
-  <div class="legend">
-    <span><span class="swatch" style="background:var(--gold)"></span>釣りどき</span>
-    <span><span class="swatch" style="background:var(--aqua)"></span>潮位</span>
-    <span><span class="swatch" style="background:#2B4A57"></span>夜間</span>
+<!-- 今の潮 -->
+<section class="now" id="now"></section>
+
+<main class="wrap">
+  <div class="chartbox">
+    <div class="chart" id="chart"></div>
+    <div class="readout" id="readout"></div>
+    <div class="legend">
+      <span><span class="swatch" style="background:var(--gold)"></span>釣りどき</span>
+      <span><span class="swatch" style="background:var(--accent)"></span>潮位</span>
+      <span><span class="swatch" style="background:var(--night)"></span>夜間</span>
+    </div>
   </div>
 
-  <h2>この日の釣りどき<span class="badge" id="dayBadge"></span></h2>
+  <h2><button class="term" data-term="best">この日の釣りどき</button><span class="badge" id="dayBadge"></span></h2>
   <div id="slots"></div>
 
-  <section id="windSec" hidden>
-    <h2>風</h2>
-    <div class="wind" id="wind"></div>
-    <div class="windNote" id="windNote"></div>
+  <section id="weatherSec" hidden>
+    <h2>天気と風</h2>
+    <div class="weather" id="weather"></div>
+    <p class="note" id="weatherNote"></p>
   </section>
 
-  <h2>満潮・干潮</h2>
+  <h2><button class="term" data-term="hilo">満潮・干潮</button></h2>
   <table id="tideTable"></table>
 
   <h2>この日のデータ</h2>
   <dl class="meta" id="meta"></dl>
+
+  <h2>いま釣れる魚</h2>
+  <div class="fish" id="fishPreview"></div>
+  <button class="btn grow" id="moreFish" style="margin-top:10px;width:100%">ほかの魚も見る</button>
 
   <section id="newsSec" hidden>
     <h2>釣りのニュース</h2>
     <ul class="news" id="news"></ul>
   </section>
 
-  <h2>用語</h2>
-  <details class="terms">
-    <summary>「上げ7分」「マズメ」「長潮」などの読み方</summary>
-    <div class="body">
-      <dl>
-        <dt>上げ◯分（ぶ）／下げ◯分</dt>
-        <dd>干潮から満潮までを「上げ」、満潮から干潮までを「下げ」と呼び、その区間を10等分して今どのあたりかを表します。<b>上げ7分</b>なら満潮まで残り3割ほど。潮がいちばん速く動くのは3分〜7分あたりで、1分と10分の前後は動きが止まります。</dd>
-
-        <dt>マズメ</dt>
-        <dd>日の出前後と日の入り前後の、空が薄明るい時間帯。魚の活性が上がるとされます。朝マズメ・夕マズメと呼び分けます。このページでは日の出・日の入りの前後45分をとくに重く見ています。</dd>
-
-        <dt>時合（じあい）</dt>
-        <dd>魚がよく釣れる時間帯のこと。潮が動く時間とマズメが重なると時合になりやすい、というのがこのページの「釣りどき」の考え方です。</dd>
-
-        <dt>潮位</dt>
-        <dd>基準面から測った海面の高さ。この表では大分験潮所の基準面を使っています。大きく引く日はマイナスになることもあります（2026年の推算では最低 -22cm）。</dd>
-
-        <dt>満潮・干潮</dt>
-        <dd>潮位が最も高くなる時刻と、最も低くなる時刻。ふつうは1日に2回ずつですが、時刻が日をまたぐ都合でどちらかが1回だけの日もあります（2026年で48日）。</dd>
-
-        <dt>干満差</dt>
-        <dd>その日の最高潮位と最低潮位の差。大きいほど海水がたくさん動きます。潮回りの名前より、この数値のほうが実態に合います。</dd>
-
-        <dt>潮回り</dt>
-        <dd>月の満ち欠けによる潮の大きさの周期。<b>大潮</b>が最も干満差が大きく、<b>中潮</b>、<b>小潮</b>の順に小さくなります。<b>長潮</b>は小潮のあとの動きが鈍い日、<b>若潮</b>は長潮の翌日で再び大きくなり始める日を指します。</dd>
-
-        <dt>月齢</dt>
-        <dd>新月からの日数。0前後が新月、約15が満月。新月と満月のころが大潮になります。</dd>
-
-        <dt>最大流速の目安</dt>
-        <dd>潮位が1時間あたり何センチ変わるかの、その日の最大値。潮の動きの速さの目安で、このページの釣りどき判定にも使っています。</dd>
-
-        <dt>よく動く／ふつう／静か</dt>
-        <dd>上の最大流速による3段階です。45cm/時以上が「よく動く」、35以上が「ふつう」、それ未満が「静か」。日をまたいで同じものさしで比べられます。</dd>
-      </dl>
-    </div>
-  </details>
-
   <footer>
-    <b>精度について</b><br>
-    潮位は大分験潮所の潮汐調和定数（2021年算定・27分潮）から推算した天文潮位です。日出町は別府湾内で大分・別府とほぼ同潮時のため、その値を使っています。大潮〜中潮では気象庁の公式予測と時刻で±10分、潮位で±10cm程度の一致ですが、<b>小潮まわりは満干潮の時刻が最大1時間ほどずれます</b>（潮位曲線が平坦で極値が定まりにくいため）。実際の潮位は気圧・風でも変わります。<br><br>
-    <b>潮回りの名前について</b><br>
-    大潮・小潮などの名前は月齢から求めています。旧暦を基準にした表記とは1日ずれることがあり、名前と実際の干満差が食い違う日もあります（長潮のほうが小潮より大きく動く、など）。強さを見るときは名前より<b>干満差の数値</b>を優先してください。<br><br>
-    <b>航行・安全の判断には使わないでください。</b>正確な値は気象庁「潮位表」や海上保安庁の刊行物をご確認ください。<br><br>
-    <b>風とニュースについて</b><br>
-    風は <a href="https://open-meteo.com/" style="color:var(--aqua)" target="_blank" rel="noopener noreferrer">Open-Meteo</a> の予報を表示しています（<a href="https://creativecommons.org/licenses/by/4.0/" style="color:var(--aqua)" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>）。予報のある期間だけ表示され、それ以外の日はこの欄が出ません。釣りのニュースは <a href="https://tsurinews.jp/" style="color:var(--aqua)" target="_blank" rel="noopener noreferrer">TSURINEWS</a> と <a href="https://tsurihack.com/" style="color:var(--aqua)" target="_blank" rel="noopener noreferrer">TSURI HACK</a> の配信フィードから、見出しと日付だけを引用しています。本文や画像は掲載していません。見出しをタップすると各サイトの元記事へ移動します。記事の著作権はそれぞれの発行元に帰属します。<br><br>
-    出典：「潮汐調和定数（大分）」（海上保安庁海洋情報部）<a href="https://www1.kaiho.mlit.go.jp/TIDE/harmonic/constants/hc.php?s=0163" style="color:var(--aqua)">https://www1.kaiho.mlit.go.jp/TIDE/harmonic/constants/hc.php?s=0163</a><br>
-    上記をもとに植野翔也が推算・作図したものです。海上保安庁および気象庁が作成・公表したデータそのものではありません。本サイトは個人が制作したもので、両庁とは一切関係ありません。
+    潮位は海上保安庁が公開する大分験潮所の調和定数から推算したものです。<br>
+    <b>航行・安全の判断には使わないでください。</b><br>
+    <button class="btn" id="aboutBtn" style="margin-top:12px">精度と出典について</button>
   </footer>
+</main>
+
+<!-- 下部の日付バー -->
+<nav class="datebar" aria-label="日付の切り替え">
+  <button class="nav" id="prev" aria-label="前の日">‹</button>
+  <div class="dateface">
+    <span class="d1" id="dateMain"></span>
+    <span class="d2" id="dateSub"></span>
+    <input type="date" id="picker" aria-label="日付を選ぶ">
+  </div>
+  <button class="nav" id="next" aria-label="次の日">›</button>
+  <button class="today" id="todayBtn">今日</button>
+</nav>
+
+<!-- ドロワー -->
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-label="メニュー">
+  <div class="dtitle">メニュー</div>
+  <nav>
+    <button data-panel="fish"><span class="em">🐟</span>いま釣れる魚</button>
+    <button data-panel="gear"><span class="em">🎒</span>持ち物チェック</button>
+    <button data-panel="log"><span class="em">📝</span>釣行メモ</button>
+    <button data-panel="terms"><span class="em">📖</span>用語の説明</button>
+    <button data-panel="about"><span class="em">ℹ️</span>このサイトについて</button>
+  </nav>
+  <div class="theme">
+    <div class="dtitle" style="padding:14px 0 8px">画面の明るさ</div>
+    <div class="theme-toggle" role="group" aria-label="画面の明るさ">
+      <button id="themeDark" aria-pressed="true">🌙 暗い</button>
+      <button id="themeBright" aria-pressed="false">☀️ 明るい</button>
+    </div>
+    <p class="note" style="padding-top:8px">日中の屋外では「明るい」のほうが見やすくなります。</p>
+  </div>
+</aside>
+
+<!-- 全画面パネル -->
+<div class="panel" id="panel" hidden role="dialog" aria-modal="true" aria-labelledby="panelTitle">
+  <div class="phead">
+    <h3 id="panelTitle"></h3>
+    <button class="icon-btn" id="panelClose" aria-label="閉じる">✕</button>
+  </div>
+  <div class="pbody" id="panelBody"></div>
 </div>
 
-<script>
-"use strict";
-const D2R=Math.PI/180;
-const LAT=33.3745, LON=131.5336;   // 大分県速見郡日出町
+<!-- 用語のボトムシート -->
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="grip"></div>
+  <h3 id="sheetTitle"></h3>
+  <p id="sheetBody"></p>
+  <button class="close" id="sheetClose">閉じる</button>
+</div>
 
-/* ===== 潮汐調和定数（海上保安庁・大分験潮所） ===== */
-const Z0=130.0;
-// [名前, 振幅cm, 遅角°, Doodson(n1..n6), 位相定数°, 節点補正タイプ]
-const CONST=[
-["Sa",16.25,150.95,[0,0,1,0,0,0],0,"none"],
-["Ssa",2.24,30.27,[0,0,2,0,0,0],0,"none"],
-["Mm",0.46,128.00,[0,1,0,-1,0,0],0,"Mm"],
-["MSf",0.35,84.72,[0,2,-2,0,0,0],0,"none"],
-["Mf",0.46,60.15,[0,2,0,0,0,0],0,"Mf"],
-["Q1",3.95,173.73,[1,-2,0,1,0,0],-90,"O1"],
-["O1",19.21,185.15,[1,-1,0,0,0,0],-90,"O1"],
-["M1",0.94,202.58,[1,0,0,1,0,0],-90,"O1"],
-["P1",8.16,205.43,[1,1,-2,0,0,0],-90,"none"],
-["S1",0.47,82.79,[1,1,-1,0,0,0],0,"none"],
-["K1",25.54,206.57,[1,1,0,0,0,0],90,"K1"],
-["J1",1.32,235.87,[1,2,0,-1,0,0],-90,"J1"],
-["OO1",0.83,264.49,[1,3,0,0,0,0],90,"OO1"],
-["2N2",1.46,226.62,[2,-2,0,2,0,0],0,"M2"],
-["mu2",0.97,217.35,[2,-2,2,0,0,0],0,"M2"],
-["N2",10.92,234.50,[2,-1,0,1,0,0],0,"M2"],
-["nu2",2.08,237.58,[2,-1,2,-1,0,0],0,"M2"],
-["M2",58.30,243.25,[2,0,0,0,0,0],0,"M2"],
-["lam2",0.80,257.11,[2,1,-2,1,0,0],180,"M2"],
-["L2",1.98,256.74,[2,1,0,-1,0,0],180,"M2"],
-["T2",1.54,262.57,[2,2,-3,0,0,1],0,"none"],
-["S2",24.20,271.34,[2,2,-2,0,0,0],0,"none"],
-["K2",6.82,267.39,[2,2,0,0,0,0],0,"K2"],
-["M4",0.58,135.79,[4,0,0,0,0,0],0,"M4"],
-["MS4",0.46,171.83,[4,2,-2,0,0,0],0,"M2"],
-["M6",0.73,250.47,[6,0,0,0,0,0],0,"M6"],
-["2MS6",0.97,293.22,[6,2,-2,0,0,0],0,"M6"]
-];
-
-function astro(utMs){
-  const ref=Date.UTC(1899,11,31,12,0,0);
-  const d=(utMs-ref)/86400000, T=d/36525;
-  const m=x=>((x%360)+360)%360;
-  return {
-    s : m(277.0247+481267.8906*T+0.0020*T*T),
-    h : m(280.1895+36000.7689*T+0.00030*T*T),
-    p : m(334.3853+4069.0340*T-0.0103*T*T),
-    N : m(259.1560-1934.1420*T+0.0021*T*T),
-    p1: m(281.2208+1.7192*T+0.00045*T*T)
-  };
-}
-function nodal(kind,N){
-  const n=N*D2R,c=Math.cos,s=Math.sin;
-  switch(kind){
-    case "M2":{const f=1.0004-0.0373*c(n)+0.0002*c(2*n);return[f,-2.14*s(n)];}
-    case "O1":return[1.0089+0.1871*c(n)-0.0147*c(2*n)+0.0014*c(3*n),10.80*s(n)-1.34*s(2*n)+0.19*s(3*n)];
-    case "K1":return[1.0060+0.1150*c(n)-0.0088*c(2*n)+0.0006*c(3*n),-8.86*s(n)+0.68*s(2*n)-0.07*s(3*n)];
-    case "K2":return[1.0241+0.2863*c(n)+0.0083*c(2*n)-0.0015*c(3*n),-17.74*s(n)+0.68*s(2*n)-0.04*s(3*n)];
-    case "J1":return[1.0129+0.1676*c(n)-0.0170*c(2*n)+0.0016*c(3*n),-12.94*s(n)+1.34*s(2*n)-0.19*s(3*n)];
-    case "OO1":return[1.1027+0.6504*c(n)+0.0317*c(2*n)-0.0014*c(3*n),-36.68*s(n)+4.02*s(2*n)-0.57*s(3*n)];
-    case "Mm":return[1.0000-0.1300*c(n)+0.0013*c(2*n),0];
-    case "Mf":return[1.0429+0.4135*c(n)-0.0040*c(2*n),-23.74*s(n)+2.68*s(2*n)-0.38*s(3*n)];
-    case "M4":{const f=1.0004-0.0373*c(n)+0.0002*c(2*n);return[f*f,2*(-2.14*s(n))];}
-    case "M6":{const f=1.0004-0.0373*c(n)+0.0002*c(2*n);return[f*f*f,3*(-2.14*s(n))];}
-    default:return[1,0];
-  }
-}
-// jstMs: JSTでの「見かけの」ミリ秒（= 実UTCms + 9h）として扱う
-function tide(realMs){
-  const a=astro(realMs);
-  const jst=new Date(realMs+9*3600000);
-  const t=jst.getUTCHours()+jst.getUTCMinutes()/60+jst.getUTCSeconds()/3600;
-  const tau=15*t+a.h-a.s;
-  let sum=Z0;
-  for(const[,A,kap,d,ph,kind]of CONST){
-    const V=d[0]*tau+d[1]*a.s+d[2]*a.h+d[3]*a.p+d[4]*a.N+d[5]*a.p1+ph;
-    const[f,u]=nodal(kind,a.N);
-    sum+=f*A*Math.cos((V+u-kap)*D2R);
-  }
-  return sum;
-}
-
-/* ===== 日の出・日の入り ===== */
-function sunTimes(date){
-  const rad=D2R,dayMs=86400000,J1970=2440588,J2000=2451545;
-  const toJulian=d=>d.valueOf()/dayMs-0.5+J1970;
-  const fromJulian=j=>new Date((j+0.5-J1970)*dayMs);
-  const toDays=d=>toJulian(d)-J2000;
-  const e=rad*23.4397;
-  const d=toDays(date);
-  const lw=rad*-LON, phi=rad*LAT;
-  const n=Math.round(d-0.0009-lw/(2*Math.PI));
-  const ds=0.0009+lw/(2*Math.PI)+n;
-  const M=rad*(357.5291+0.98560028*ds);
-  const L=M+rad*(1.9148*Math.sin(M)+0.02*Math.sin(2*M)+0.0003*Math.sin(3*M))+rad*102.9372+Math.PI;
-  const dec=Math.asin(Math.sin(e)*Math.sin(L));
-  const Jtransit=J2000+ds+0.0053*Math.sin(M)-0.0069*Math.sin(2*L);
-  const h0=rad*-0.833;
-  const cosH=(Math.sin(h0)-Math.sin(phi)*Math.sin(dec))/(Math.cos(phi)*Math.cos(dec));
-  const H=Math.acos(Math.max(-1,Math.min(1,cosH)));
-  const a2=0.0009+(H/(2*Math.PI)+lw/(2*Math.PI))+n;
-  const Jset=J2000+a2+0.0053*Math.sin(M)-0.0069*Math.sin(2*L);
-  const Jrise=Jtransit-(Jset-Jtransit);
-  return{rise:fromJulian(Jrise),set:fromJulian(Jset)};
-}
-
-/* ===== 月齢・潮回り ===== */
-function moonAge(date){
-  const synodic=29.530588853;
-  const newMoon=Date.UTC(2000,0,6,18,14,0);
-  let age=((date.getTime()-newMoon)/86400000)%synodic;
-  if(age<0)age+=synodic;
-  return age;
-}
-const TIDE_NAME=[null,"大潮","大潮","大潮","中潮","中潮","中潮","中潮","小潮","小潮","小潮","長潮","若潮","中潮","中潮","大潮","大潮","大潮","大潮","中潮","中潮","中潮","中潮","小潮","小潮","小潮","長潮","若潮","中潮","中潮","大潮"];
-function tideName(date){
-  const d=Math.floor(moonAge(date))+1;
-  return TIDE_NAME[Math.min(30,d)]||"中潮";
-}
-
-/* ===== 1日分の計算 ===== */
-const FLOW_REF=50;   // 流速スコアの基準（cm/時）。大潮の最大流速がほぼこの値
-function dayData(baseDate){
-  // baseDate: JST 0:00 のDate
-  const start=baseDate.getTime();
-  const end=start+86400000;
-  const step=2*60000;
-  // 極値の検出は前後6時間まで見る。日をまたぐ時合の「上げ何分」を出すのに必要
-  const pts=[];
-  for(let m=-360*60000;m<=(24*60+360)*60000;m+=step){
-    pts.push({ms:start+m,v:tide(start+m)});
-  }
-  // 極値
-  const ext=[];
-  for(let i=1;i<pts.length-1;i++){
-    const a=pts[i-1].v,b=pts[i].v,c=pts[i+1].v;
-    if(b>=a&&b>=c)ext.push({type:"hi",ms:pts[i].ms,v:b});
-    else if(b<=a&&b<=c)ext.push({type:"lo",ms:pts[i].ms,v:b});
-  }
-  const inDay=ext.filter(e=>e.ms>=start&&e.ms<end);
-  const sun=sunTimes(new Date(start+12*3600000));
-  // スコアは前後2時間ぶんだけ作る。日をまたぐ時合を切らずにつなぐため
-  let maxFlow=0;
-  const scored=pts.filter(p=>p.ms>=start-120*60000&&p.ms<=end+120*60000).map(p=>{
-    const flow=Math.abs(tide(p.ms+15*60000)-tide(p.ms-15*60000))*2; // cm/h
-    if(p.ms>=start&&p.ms<end&&flow>maxFlow)maxFlow=flow;
-    return{ms:p.ms,v:p.v,flow};
-  });
-  const sr=sun.rise.getTime(),ss=sun.set.getTime();
-  scored.forEach(p=>{
-    const dSun=Math.min(Math.abs(p.ms-sr),Math.abs(p.ms-ss))/60000;
-    const light=dSun<=45?1:dSun<=90?0.55:0;
-    p.light=light;
-    // 分母はその日の最大ではなく固定値。日をまたいで強さを比べられるようにする
-    p.score=0.62*Math.min(1,p.flow/FLOW_REF)+0.38*light;
-  });
-  return{start,end,pts,ext,inDay,scored,sun,maxFlow};
-}
-
-/* ===== ベストタイム区間 ===== */
-function slotsAt(d,th){
-  const runs=[];let cur=null;
-  for(const p of d.scored){
-    if(p.score>=th){
-      if(!cur)cur={from:p.ms,to:p.ms,sum:0,n:0,light:0};
-      cur.to=p.ms;cur.sum+=p.score;cur.n++;cur.light=Math.max(cur.light,p.light);
-    }else if(cur){runs.push(cur);cur=null;}
-  }
-  if(cur)runs.push(cur);
-  return runs
-    .filter(r=>r.to-r.from>=40*60000)
-    .filter(r=>r.to>d.start&&r.from<d.end)   // その日と重なる区間だけ残す
-    .map(r=>({...r,avg:r.sum/r.n}))
-    .sort((a,b)=>b.avg-a.avg);
-}
-// 戻り値の weak は「潮が動かない日に次善の1件を出した」ことを示す
-function bestSlots(d){
-  const main=slotsAt(d,0.52);
-  if(main.length)return{slots:main.slice(0,3).sort((a,b)=>a.from-b.from),weak:false};
-  for(const th of[0.48,0.42]){        // 60日分の実測で 0.42 まで下げれば必ず1件は出る
-    const r=slotsAt(d,th);
-    if(r.length)return{slots:[r[0]],weak:true};
-  }
-  return{slots:[],weak:true};
-}
-
-/* ===== 潮の「分（ぶ）」 ===== */
-function tidePhase(d,ms){
-  let prev=null,next=null;
-  for(const e of d.ext){
-    if(e.ms<=ms)prev=e;
-    if(e.ms>ms&&!next)next=e;
-  }
-  if(!prev||!next)return null;
-  const r=(ms-prev.ms)/(next.ms-prev.ms);
-  const bu=Math.max(1,Math.min(10,Math.ceil(r*10)));
-  const dir=prev.type==="lo"?"上げ":"下げ";
-  return{dir,bu,next};
-}
-
-/* ===== 描画 ===== */
-const fmt=ms=>{const d=new Date(ms+9*3600000);return String(d.getUTCHours()).padStart(2,"0")+":"+String(d.getUTCMinutes()).padStart(2,"0");};
-// 表示中の日からはみ出す時刻に「前」「翌」を付ける
-const fmtD=(ms,d)=>(ms<d.start?"前":ms>=d.end?"翌":"")+fmt(ms);
-const W=360,H=190,PT=18,PB=26,PL=6,PR=6;
-
-function draw(d,slots){
-  const dayPts=d.scored.filter(p=>p.ms>=d.start&&p.ms<=d.end);
-  const vals=dayPts.map(p=>p.v);
-  const lo=Math.min(...vals),hi=Math.max(...vals);
-  const yMin=Math.floor((lo-25)/20)*20,yMax=Math.ceil((hi+25)/20)*20;
-  const X=ms=>PL+((ms-d.start)/86400000)*(W-PL-PR);
-  const Y=v=>PT+(1-(v-yMin)/(yMax-yMin))*(H-PT-PB);
-
-  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="潮位グラフ">`;
-  s+=`<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#46B8AC" stop-opacity=".45"/>
-    <stop offset="1" stop-color="#46B8AC" stop-opacity=".04"/></linearGradient></defs>`;
-
-  // 夜間
-  const sr=d.sun.rise.getTime(),ss=d.sun.set.getTime();
-  s+=`<rect x="${PL}" y="${PT}" width="${X(sr)-PL}" height="${H-PT-PB}" fill="#0D3442" opacity=".85"/>`;
-  s+=`<rect x="${X(ss)}" y="${PT}" width="${W-PR-X(ss)}" height="${H-PT-PB}" fill="#0D3442" opacity=".85"/>`;
-
-  // ベストタイム帯（日をまたぐ区間はグラフの端で切る）
-  const clampX=ms=>Math.max(PL,Math.min(W-PR,X(ms)));
-  for(const r of slots){
-    const x0=clampX(r.from),x1=clampX(r.to);
-    s+=`<rect x="${x0}" y="${PT}" width="${Math.max(2,x1-x0)}" height="${H-PT-PB}" fill="#F0B429" opacity=".16"/>`;
-  }
-  // 時刻グリッド
-  for(let hh=0;hh<=24;hh+=6){
-    const x=PL+(hh/24)*(W-PL-PR);
-    s+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${H-PB}" stroke="#1D5566" stroke-width="1"/>`;
-    s+=`<text x="${x}" y="${H-PB+14}" fill="#8FB0B4" font-size="10" text-anchor="${hh===0?"start":hh===24?"end":"middle"}">${hh}時</text>`;
-  }
-  // 波形
-  let path="",area="";
-  dayPts.forEach((p,i)=>{
-    const x=X(p.ms),y=Y(p.v);
-    path+=(i?"L":"M")+x.toFixed(1)+" "+y.toFixed(1);
-  });
-  area=path+`L${X(d.end)} ${H-PB}L${PL} ${H-PB}Z`;
-  s+=`<path d="${area}" fill="url(#wg)"/>`;
-  s+=`<path d="${path}" fill="none" stroke="#46B8AC" stroke-width="2.2" stroke-linejoin="round"/>`;
-
-  // 満干潮ラベル
-  for(const e of d.inDay){
-    const x=X(e.ms),y=Y(e.v);
-    const up=e.type==="hi";
-    s+=`<circle cx="${x}" cy="${y}" r="3.4" fill="${up?"#7FD1C4":"#79A8D8"}"/>`;
-    const tx=Math.max(22,Math.min(W-22,x));
-    s+=`<text x="${tx}" y="${up?y-9:y+17}" fill="${up?"#7FD1C4":"#79A8D8"}" font-size="10.5" font-weight="600" text-anchor="middle">${fmt(e.ms)}</text>`;
-  }
-  // 日の出・日の入り
-  [[sr,"日の出"],[ss,"日の入"]].forEach(([ms,lab])=>{
-    const x=X(ms);
-    s+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${H-PB}" stroke="#F0B429" stroke-width="1" stroke-dasharray="2 3" opacity=".6"/>`;
-  });
-  // 現在時刻
-  const now=Date.now();
-  if(now>=d.start&&now<d.end){
-    const x=X(now);
-    s+=`<line x1="${x}" y1="${PT-8}" x2="${x}" y2="${H-PB}" stroke="#E6F0EF" stroke-width="1.4"/>`;
-    s+=`<circle cx="${x}" cy="${Y(tide(now))}" r="5" fill="#E6F0EF"/>`;
-    s+=`<text x="${x}" y="${PT-12}" fill="#E6F0EF" font-size="10" text-anchor="middle">いま</text>`;
-  }
-  s+=`</svg>`;
-  return s;
-}
-
-/* ===== 風（Open-Meteo・CC BY 4.0） ===== */
-const DIRS=["北","北北東","北東","東北東","東","東南東","南東","南南東","南","南南西","南西","西南西","西","西北西","北西","北北西"];
-const windDir=deg=>DIRS[Math.round((((deg%360)+360)%360)/22.5)%16];
-const windCache=new Map();   // 日付文字列 → hourly データ（予報の範囲外は null）
-let windGen=0;               // 日付を連打したとき、古い応答を捨てるための世代番号
-
-async function loadWind(iso){
-  if(windCache.has(iso))return windCache.get(iso);
-  const url=`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`
-    +`&hourly=wind_speed_10m,wind_gusts_10m,wind_direction_10m`
-    +`&timezone=Asia%2FTokyo&wind_speed_unit=ms&start_date=${iso}&end_date=${iso}`;
-  try{
-    const r=await fetch(url);
-    const j=await r.json();
-    const h=(j&&j.hourly&&Array.isArray(j.hourly.time))?j.hourly:null;
-    windCache.set(iso,h);    // 範囲外の日（API が error を返す）も覚えて再問い合わせしない
-    return h;
-  }catch(e){
-    return null;             // 通信の失敗は覚えない。次に開いたとき再試行する
-  }
-}
-
-const hourMs=t=>Date.parse(t+":00+09:00");
-
-// 区間 from〜to に重なる時刻の平均風速。データが無ければ null
-function windAvg(h,from,to){
-  let sum=0,n=0;
-  for(let i=0;i<h.time.length;i++){
-    const v=h.wind_speed_10m[i],ms=hourMs(h.time[i]);
-    if(v!=null&&ms>=from&&ms<=to){sum+=v;n++;}
-  }
-  return n?sum/n:null;
-}
-
-function renderWind(h){
-  const box=document.getElementById("wind");
-  box.textContent="";
-  let gust=null,gustAt=0;
-  for(let i=0;i<h.time.length;i++){
-    const g=h.wind_gusts_10m[i];
-    if(g!=null&&(gust===null||g>gust)){gust=g;gustAt=Number(h.time[i].slice(11,13));}
-  }
-  for(const hh of[0,3,6,9,12,15,18,21]){
-    const i=h.time.findIndex(t=>Number(t.slice(11,13))===hh);
-    const sp=i>=0?h.wind_speed_10m[i]:null;
-    const dir=i>=0?h.wind_direction_10m[i]:null;
-    const cls=sp==null?"":sp>=5?" strong":sp>=3?" mid":"";
-    const cell=document.createElement("div");
-    cell.innerHTML=`<div class="h">${hh}時</div>`
-      +`<div class="v${cls}">${sp==null?"—":sp.toFixed(1)}<small>m/s</small></div>`
-      +`<div class="d">${dir==null?"":windDir(dir)}</div>`;
-    box.appendChild(cell);
-  }
-  document.getElementById("windNote").textContent=
-    gust!=null?`最大瞬間 ${gust.toFixed(1)}m/s（${gustAt}時ごろ）。5m/s を超えると釣りにくくなります。`:"";
-}
-
-// 釣りどきの各区間に平均風速を書き足す
-function annotateSlots(h){
-  document.querySelectorAll("#slots .slot").forEach(el=>{
-    const avg=windAvg(h,Number(el.dataset.from),Number(el.dataset.to));
-    const why=el.querySelector(".why");
-    if(avg==null||!why)return;
-    why.textContent+=`　風 ${avg.toFixed(1)}m/s`;
-  });
-}
-
-let windShownFor=null;   // いま風を描いてある日。同じ日の再描画を省くため
-
-function updateWind(d){
-  const gen=++windGen;
-  const iso=isoJst(d.start);
-  const sec=document.getElementById("windSec");
-  // 未取得か範囲外の日だけ隠す。取得済みの日で隠すと、毎分の再描画でセクションが点滅する
-  if(!windCache.get(iso))sec.hidden=true;
-  loadWind(iso).then(h=>{
-    if(gen!==windGen||!h)return;         // 表示中の日が変わっていたら捨てる
-    if(windShownFor!==iso){renderWind(h);windShownFor=iso;}
-    annotateSlots(h);                    // 釣りどきは毎回描き直されるので毎回添える
-    sec.hidden=false;
-  }).catch(()=>{});
-}
-
-/* ===== 釣りのニュース ===== */
-// 日付とは連動しない。起動時に1回だけ読む
-function loadNews(){
-  fetch("/api/news").then(r=>r.json()).then(j=>{
-    const items=(j&&Array.isArray(j.items))?j.items:[];
-    const ul=document.getElementById("news");
-    ul.textContent="";
-    let n=0;
-    for(const it of items){
-      if(!it.title||typeof it.link!=="string"||!it.link.startsWith("https://"))continue;
-      const a=document.createElement("a");
-      a.href=it.link;a.target="_blank";a.rel="noopener noreferrer";
-      a.textContent=it.title;            // 外部由来の文字列なので textContent で入れる
-      const at=it.date?new Date(it.date):null;
-      const m=document.createElement("div");
-      m.className="m";
-      m.textContent=(at&&!isNaN(at)?`${at.getMonth()+1}月${at.getDate()}日・`:"")+(it.source||"");
-      a.appendChild(m);
-      const li=document.createElement("li");
-      li.appendChild(a);
-      ul.appendChild(li);
-      n++;
-    }
-    if(n)document.getElementById("newsSec").hidden=false;
-  }).catch(()=>{});
-}
-
-/* ===== 画面更新 ===== */
-function jstMidnight(dt){
-  const j=new Date(dt.getTime()+9*3600000);
-  return new Date(Date.UTC(j.getUTCFullYear(),j.getUTCMonth(),j.getUTCDate())-9*3600000);
-}
-const isoJst=ms=>{
-  const j=new Date(ms+9*3600000);
-  return `${j.getUTCFullYear()}-${String(j.getUTCMonth()+1).padStart(2,"0")}-${String(j.getUTCDate()).padStart(2,"0")}`;
-};
-// URL の ?d=YYYY-MM-DD を読む。書式違いと 2026-02-31 のような日付は捨てて今日に戻す
-function dateFromQuery(){
-  const q=new URLSearchParams(location.search).get("d");
-  if(!q||!/^\d{4}-\d{2}-\d{2}$/.test(q))return null;
-  const[y,m,dd]=q.split("-").map(Number);
-  const t=new Date(Date.UTC(y,m-1,dd));
-  if(t.getUTCFullYear()!==y||t.getUTCMonth()!==m-1||t.getUTCDate()!==dd)return null;
-  return new Date(t.getTime()-9*3600000);
-}
-let viewDate=dateFromQuery()||jstMidnight(new Date());
-const WD=["日","月","火","水","木","金","土"];
-
-function render(){
-  const d=dayData(viewDate);
-  const jd=new Date(d.start+9*3600000);
-  const isToday=d.start===jstMidnight(new Date()).getTime();
-  const noon=new Date(d.start+12*3600000);
-  const {slots,weak}=bestSlots(d);
-  const range=d.inDay.length
-    ? Math.round(Math.max(...d.inDay.map(e=>e.v))-Math.min(...d.inDay.map(e=>e.v)))
-    : null;
-
-  // 潮回りの名前より干満差の数値を先に出す（名前は月齢由来で旧暦とずれるため）
-  document.getElementById("dateLabel").innerHTML=
-    `${jd.getUTCMonth()+1}月${jd.getUTCDate()}日(${WD[jd.getUTCDay()]})<small>${range!==null?`干満差${range}cm・`:""}${tideName(noon)}</small>`;
-  document.getElementById("picker").value=isoJst(d.start);
-
-  // 判定は表示と同じ丸めた値で行う（45 と出ているのに「ふつう」になるのを防ぐ）
-  const flowR=Math.round(d.maxFlow);
-  const badge=flowR>=45?["strong","よく動く"]:flowR>=35?["mid","ふつう"]:["calm","静か"];
-  const badgeEl=document.getElementById("dayBadge");
-  badgeEl.className="badge "+badge[0];
-  badgeEl.textContent=badge[1];
-
-  // ヒーロー
-  const refMs=isToday?Date.now():d.start+9*3600000;
-  const ph=tidePhase(d,refMs);
-  const lv=tide(refMs);
-  document.getElementById("state").innerHTML=
-    isToday
-      ? (ph?`いまは <b>${ph.dir}${ph.bu}分</b>`:"潮位")
-      : `${fmt(refMs)} 時点は <b>${ph?ph.dir+ph.bu+"分":"—"}</b>`;
-  document.getElementById("level").innerHTML=`${Math.round(lv)}<span class="unit">cm</span>`;
-  if(ph){
-    const mins=Math.round((ph.next.ms-refMs)/60000);
-    document.getElementById("nextEvent").innerHTML=
-      `次の${ph.next.type==="hi"?"満潮":"干潮"}は <b>${fmt(ph.next.ms)}</b>（あと${Math.floor(mins/60)}時間${mins%60}分・${Math.round(ph.next.v)}cm）`;
-  }else document.getElementById("nextEvent").textContent="";
-
-  document.getElementById("chart").innerHTML=draw(d,slots);
-
-  // ベストタイム
-  const sr=d.sun.rise.getTime(),ss=d.sun.set.getTime();
-  const box=document.getElementById("slots");
-  if(!slots.length){box.innerHTML=`<div class="empty">この日は潮の動きが弱く、突出した時合がありません。小潮まわりは終日だらだら流れるので、朝夕のマズメ優先で。</div>`;}
-  else{
-    // 弱い区間を薄く出す基準は最高スコア。slots は時刻順なので先頭が最高とは限らない
-    const best=Math.max(...slots.map(r=>r.avg));
-    box.innerHTML=(weak?`<div class="empty">この日は突出した時合がありません。強いて挙げるならこの時間帯です。</div>`:"")
-      +slots.map(r=>{
-      // 日をまたぐ区間は、その日に入っている部分の中間で潮の状態を見る
-      const mid=(Math.max(r.from,d.start)+Math.min(r.to,d.end))/2;
-      const p=tidePhase(d,mid);
-      const reasons=[];
-      if(p)reasons.push(`${p.dir}${p.bu}分（${weak?"この日では動くほう":"潮がよく動く"}）`);
-      if(Math.abs(mid-sr)<90*60000)reasons.push("朝マズメ");
-      if(Math.abs(mid-ss)<90*60000)reasons.push("夕マズメ");
-      const mins=Math.round((r.to-r.from)/60000);
-      return `<div class="slot${weak||r.avg<best*0.9?" sub":""}" data-from="${r.from}" data-to="${r.to}">
-        <div class="t">${fmtD(r.from,d)} – ${fmtD(r.to,d)}<span style="font-size:13px;font-weight:400;color:var(--muted)"> ／ ${Math.floor(mins/60)?Math.floor(mins/60)+"時間":""}${mins%60?mins%60+"分":""}</span></div>
-        <div class="why">${reasons.join(" ＋ ")}</div>
-      </div>`;
-    }).join("");
-  }
-
-  // 潮位表
-  const rows=d.inDay.slice().sort((a,b)=>a.ms-b.ms).map(e=>
-    `<tr><td><span class="tag ${e.type}">${e.type==="hi"?"満潮":"干潮"}</span></td>
-     <td style="font-weight:600">${fmt(e.ms)}</td><td class="num">${Math.round(e.v)} cm</td></tr>`).join("");
-  document.getElementById("tideTable").innerHTML=
-    `<tr><th style="width:70px">潮</th><th>時刻</th><th class="num">潮位</th></tr>`+rows;
-
-  // メタ
-  const age=moonAge(noon);
-  document.getElementById("meta").innerHTML=`
-    <div><dt>干満差</dt><dd>${range!==null?range+" cm":"—"}</dd></div>
-    <div><dt>潮回り</dt><dd>${tideName(noon)}</dd></div>
-    <div><dt>日の出</dt><dd>${fmt(sr)}</dd></div>
-    <div><dt>日の入り</dt><dd>${fmt(ss)}</dd></div>
-    <div><dt>月齢</dt><dd>${age.toFixed(1)}</dd></div>
-    <div><dt>最大流速の目安</dt><dd>${flowR} cm/時</dd></div>`;
-
-  // 表示中の日を URL に載せる。連打で履歴が溜まらないよう replaceState を使う
-  // file:// やサンドボックス内では例外になるので、失敗しても描画は止めない
-  try{
-    history.replaceState(null,"",isToday?location.pathname:`${location.pathname}?d=${isoJst(d.start)}`);
-  }catch(e){}
-
-  updateWind(d);   // 非同期。潮汐の描画はここまでで完結している
-}
-
-function shift(days){
-  viewDate=new Date(viewDate.getTime()+days*86400000);
-  viewDate=jstMidnight(viewDate);
-  render();
-}
-document.getElementById("prev").onclick=()=>shift(-1);
-document.getElementById("next").onclick=()=>shift(1);
-document.getElementById("todayBtn").onclick=()=>{viewDate=jstMidnight(new Date());render();};
-document.getElementById("picker").onchange=e=>{
-  const[y,m,dd]=e.target.value.split("-").map(Number);
-  viewDate=new Date(Date.UTC(y,m-1,dd)-9*3600000);
-  render();
-};
-render();
-loadNews();
-setInterval(()=>{if(viewDate.getTime()===jstMidnight(new Date()).getTime())render();},60000);
-</script>
 </body>
 </html>
