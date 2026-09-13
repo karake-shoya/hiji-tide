@@ -7,6 +7,7 @@ import { loadWeather, cachedWeather } from "./weather.js";
 import { isScrubbing } from "./chart.js";
 import { loadNews } from "./news.js";
 import { initNav, showTab, refreshTab } from "./ui/nav.js";
+import { initPullToRefresh } from "./ui/pull.js";
 import * as view from "./ui/view.js";
 
 const $ = (id) => document.getElementById(id);
@@ -108,7 +109,12 @@ render();
 
 // 釣行メモをすぐ書けるよう、?log=1 で開いたときは釣果タブから始める
 // （履歴は積まない。戻るでサイトを離れてしまうため）
+// 引っ張って更新でリロードしたときは、見ていたタブへ戻す（history.state はリロードしても残る）
 if (new URLSearchParams(location.search).get("log") === "1") showTab("log", true);
+else if (history.state?.hijiTab) showTab(history.state.hijiTab, true);
+
+// 画面の上端から引き下げるとリロードする（PWA には再読み込みボタンが無いため）
+initPullToRefresh();
 
 loadNews().then(view.renderNews);
 

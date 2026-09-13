@@ -1125,6 +1125,50 @@ textarea {
   white-space: pre-wrap;
 }
 
+/* ===== 引っ張って更新（js/ui/pull.js が付け外しする） ===== */
+.ptr {
+  position: fixed;
+  top: env(safe-area-inset-top);
+  left: 0;
+  right: 0;
+  /* 下部タブ(25)より上、覆いの幕(30)より下 */
+  z-index: 26;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  /* 既定は画面の外。引かれた分だけ JS が下ろす */
+  transform: translate3d(0, -56px, 0);
+}
+/* 指を離したあとだけ滑らせる。引いている間は指にそのまま付ける */
+.ptr.is-animating {
+  transition: transform 0.22s ease, opacity 0.22s ease;
+}
+.ptr-ring {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+}
+/* 離せば更新される合図 */
+.ptr.is-ready .ptr-ring {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+.ptr.is-busy .ptr-ring svg {
+  animation: ptr-spin 0.8s linear infinite;
+}
+@keyframes ptr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ===== フッター ===== */
 footer {
   font-size: 13px;

@@ -18,6 +18,9 @@ let closeOverlay = null; // パネルかシートが開いていれば、それ�
 
 export const currentTab = () => current;
 
+/** パネルかシートが画面に重なっているか（引っ張って更新が割り込まないよう見る） */
+export const isOverlayOpen = () => !!closeOverlay;
+
 /** 明るさを画面に反映する。ブラウザの上下のバーの色も合わせる */
 export function applyTheme(v) {
   const theme = v === "bright" ? "bright" : "dark";
