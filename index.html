@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>日出の潮 | 大分県日出町の潮見表と釣りどき</title>
+<meta name="description" content="大分県日出町（別府湾）の満潮・干潮と、潮の動き・マズメから割り出した釣りどきの時間帯。日付を選ぶとその日の潮位カーブと時合が出ます。">
+<link rel="canonical" href="https://hiji-tide.vercel.app/">
+<meta name="theme-color" content="#062029">
+<meta property="og:type" content="website">
+<meta property="og:title" content="日出の潮 | 大分県日出町の潮見表と釣りどき">
+<meta property="og:description" content="別府湾の満潮・干潮と、潮の動き・マズメから割り出した釣りどきの時間帯。">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23062029'/%3E%3Cpath d='M2 20c4 0 4-5 8-5s4 5 8 5 4-5 8-5 4 5 8 5' fill='none' stroke='%2346B8AC' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='9' r='3.2' fill='%23F0B429'/%3E%3C/svg%3E">
+<style>
+:root{
+  --abyss:#062029;
+  --deep:#0A2F3A;
+  --panel:#11414F;
+  --line:#1D5566;
+  --aqua:#46B8AC;
+  --aqua-dim:#2A7C79;
+  --gold:#F0B429;
+  --gold-dim:#7A5C1A;
+  --ink:#E6F0EF;
+  --muted:#8FB0B4;
+  --rise:#7FD1C4;
+  --fall:#79A8D8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--abyss);
+  color:var(--ink);
+  font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;
+  font-variant-numeric:tabular-nums;
+  line-height:1.6;
+  padding:0 0 48px;
+  max-width:560px;margin:0 auto;
+}
+.wrap{padding:0 18px}
+
+/* ---- 日付ナビ ---- */
+.datebar{
+  display:flex;align-items:center;gap:8px;
+  padding:14px 18px 10px;
+  position:sticky;top:0;z-index:5;
+  background:linear-gradient(var(--abyss) 70%,rgba(6,32,41,0));
+}
+.datebar button{
+  background:var(--panel);color:var(--ink);border:1px solid var(--line);
+  border-radius:10px;width:40px;height:40px;font-size:17px;cursor:pointer;
+}
+.datebar button:active{background:var(--line)}
+.datebar .today{width:auto;padding:0 14px;font-size:14px}
+#dateLabel{flex:1;text-align:center;font-size:16px;font-weight:600}
+#dateLabel small{display:block;font-size:12px;color:var(--muted);font-weight:400}
+input[type=date]{
+  background:var(--panel);border:1px solid var(--line);color:var(--ink);
+  border-radius:10px;padding:8px;font-size:14px;width:100%;margin-top:8px;
+  font-family:inherit;
+}
+
+/* ---- ヒーロー ---- */
+.hero{
+  padding:8px 18px 20px;
+}
+.state{
+  font-size:15px;color:var(--muted);
+}
+.state b{color:var(--ink);font-weight:600}
+.big{
+  font-size:46px;line-height:1.1;font-weight:700;letter-spacing:-0.02em;
+  margin:2px 0 4px;
+}
+.big .unit{font-size:18px;font-weight:500;color:var(--muted);margin-left:4px}
+.next{font-size:14px;color:var(--muted)}
+.next b{color:var(--rise);font-weight:600}
+
+/* ---- グラフ ---- */
+.chart{margin:6px 0 22px}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.legend{
+  display:flex;gap:14px;font-size:11.5px;color:var(--muted);
+  padding:6px 2px 0;flex-wrap:wrap;
+}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:5px}
+
+/* ---- セクション ---- */
+h2{
+  font-size:13px;font-weight:600;color:var(--muted);
+  margin:26px 0 10px;
+  display:flex;align-items:center;gap:10px;
+}
+h2::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* ---- ベストタイム ---- */
+.slot{
+  border-left:3px solid var(--gold);
+  background:linear-gradient(90deg,rgba(240,180,41,.10),rgba(240,180,41,0));
+  padding:11px 14px;border-radius:0 10px 10px 0;margin-bottom:10px;
+}
+.slot .t{font-size:19px;font-weight:700;letter-spacing:-0.01em}
+.slot .why{font-size:13px;color:var(--muted);margin-top:2px}
+.slot.sub{border-left-color:var(--aqua-dim);background:linear-gradient(90deg,rgba(70,184,172,.08),rgba(70,184,172,0))}
+.empty{color:var(--muted);font-size:14px;padding:8px 0}
+
+/* ---- 潮位表 ---- */
+table{width:100%;border-collapse:collapse;font-size:15px}
+td,th{padding:9px 4px;border-bottom:1px solid var(--line);text-align:left}
+th{font-size:12px;color:var(--muted);font-weight:500;border-bottom-color:var(--line)}
+td.num{text-align:right;color:var(--muted)}
+.tag{font-size:12px;padding:2px 8px;border-radius:999px;font-weight:600}
+.tag.hi{background:rgba(127,209,196,.15);color:var(--rise)}
+.tag.lo{background:rgba(121,168,216,.15);color:var(--fall)}
+
+/* ---- メタ ---- */
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border-radius:12px;overflow:hidden}
+.meta div{background:var(--deep);padding:12px 14px}
+.meta dt{font-size:11.5px;color:var(--muted)}
+.meta dd{font-size:17px;font-weight:600;margin-top:1px}
+
+footer{
+  font-size:11.5px;color:var(--muted);line-height:1.7;
+  margin-top:28px;padding-top:16px;border-top:1px solid var(--line);
+}
+footer b{color:#B9CFD1;font-weight:600}
+</style>
+</head>
+<body>
+
+<header class="wrap" style="padding-top:20px">
+  <div style="font-size:22px;font-weight:700;letter-spacing:-0.01em">日出の潮</div>
+  <p style="font-size:13px;color:var(--muted);margin-top:1px">大分県日出町・別府湾の潮見表と、潮とマズメから見た釣りどき</p>
+</header>
+
+<div class="datebar">
+  <button id="prev" aria-label="前の日">‹</button>
+  <div id="dateLabel"></div>
+  <button id="next" aria-label="次の日">›</button>
+  <button class="today" id="todayBtn">今日</button>
+</div>
+<div class="wrap"><input type="date" id="picker"></div>
+
+<div class="hero">
+  <div class="state" id="state"></div>
+  <div class="big" id="level"></div>
+  <div class="next" id="nextEvent"></div>
+</div>
+
+<div class="wrap">
+  <div class="chart" id="chart"></div>
+  <div class="legend">
+    <span><span class="swatch" style="background:var(--gold)"></span>釣りどき</span>
+    <span><span class="swatch" style="background:var(--aqua)"></span>潮位</span>
+    <span><span class="swatch" style="background:#2B4A57"></span>夜間</span>
+  </div>
+
+  <h2>この日の釣りどき</h2>
+  <div id="slots"></div>
+
+  <h2>満潮・干潮</h2>
+  <table id="tideTable"></table>
+
+  <h2>この日のデータ</h2>
+  <dl class="meta" id="meta"></dl>
+
+  <footer>
+    <b>精度について</b><br>
+    潮位は大分験潮所の潮汐調和定数（2021年算定・27分潮）から推算した天文潮位です。日出町は別府湾内で大分・別府とほぼ同潮時のため、その値を使っています。大潮〜中潮では気象庁の公式予測と時刻で±10分、潮位で±10cm程度の一致ですが、<b>小潮まわりは満干潮の時刻が最大1時間ほどずれます</b>（潮位曲線が平坦で極値が定まりにくいため）。実際の潮位は気圧・風でも変わります。<br><br>
+    <b>航行・安全の判断には使わないでください。</b>正確な値は気象庁「潮位表」や海上保安庁の刊行物をご確認ください。<br><br>
+    出典：「潮汐調和定数（大分）」（海上保安庁海洋情報部）<a href="https://www1.kaiho.mlit.go.jp/TIDE/harmonic/constants/hc.php?s=0163" style="color:var(--aqua)">https://www1.kaiho.mlit.go.jp/TIDE/harmonic/constants/hc.php?s=0163</a><br>
+    上記をもとに植野翔也が推算・作図したものです。海上保安庁および気象庁が作成・公表したデータそのものではありません。本サイトは個人が制作したもので、両庁とは一切関係ありません。
+  </footer>
+</div>
+
+<script>
+"use strict";
+const D2R=Math.PI/180;
+const LAT=33.3745, LON=131.5336;   // 大分県速見郡日出町
+
+/* ===== 潮汐調和定数（海上保安庁・大分験潮所） ===== */
+const Z0=130.0;
+// [名前, 振幅cm, 遅角°, Doodson(n1..n6), 位相定数°, 節点補正タイプ]
+const CONST=[
+["Sa",16.25,150.95,[0,0,1,0,0,0],0,"none"],
+["Ssa",2.24,30.27,[0,0,2,0,0,0],0,"none"],
+["Mm",0.46,128.00,[0,1,0,-1,0,0],0,"Mm"],
+["MSf",0.35,84.72,[0,2,-2,0,0,0],0,"none"],
+["Mf",0.46,60.15,[0,2,0,0,0,0],0,"Mf"],
+["Q1",3.95,173.73,[1,-2,0,1,0,0],-90,"O1"],
+["O1",19.21,185.15,[1,-1,0,0,0,0],-90,"O1"],
+["M1",0.94,202.58,[1,0,0,1,0,0],-90,"O1"],
+["P1",8.16,205.43,[1,1,-2,0,0,0],-90,"none"],
+["S1",0.47,82.79,[1,1,-1,0,0,0],0,"none"],
+["K1",25.54,206.57,[1,1,0,0,0,0],90,"K1"],
+["J1",1.32,235.87,[1,2,0,-1,0,0],-90,"J1"],
+["OO1",0.83,264.49,[1,3,0,0,0,0],90,"OO1"],
+["2N2",1.46,226.62,[2,-2,0,2,0,0],0,"M2"],
+["mu2",0.97,217.35,[2,-2,2,0,0,0],0,"M2"],
+["N2",10.92,234.50,[2,-1,0,1,0,0],0,"M2"],
+["nu2",2.08,237.58,[2,-1,2,-1,0,0],0,"M2"],
+["M2",58.30,243.25,[2,0,0,0,0,0],0,"M2"],
+["lam2",0.80,257.11,[2,1,-2,1,0,0],180,"M2"],
+["L2",1.98,256.74,[2,1,0,-1,0,0],180,"M2"],
+["T2",1.54,262.57,[2,2,-3,0,0,1],0,"none"],
+["S2",24.20,271.34,[2,2,-2,0,0,0],0,"none"],
+["K2",6.82,267.39,[2,2,0,0,0,0],0,"K2"],
+["M4",0.58,135.79,[4,0,0,0,0,0],0,"M4"],
+["MS4",0.46,171.83,[4,2,-2,0,0,0],0,"M2"],
+["M6",0.73,250.47,[6,0,0,0,0,0],0,"M6"],
+["2MS6",0.97,293.22,[6,2,-2,0,0,0],0,"M6"]
+];
+
+function astro(utMs){
+  const ref=Date.UTC(1899,11,31,12,0,0);
+  const d=(utMs-ref)/86400000, T=d/36525;
+  const m=x=>((x%360)+360)%360;
+  return {
+    s : m(277.0247+481267.8906*T+0.0020*T*T),
+    h : m(280.1895+36000.7689*T+0.00030*T*T),
+    p : m(334.3853+4069.0340*T-0.0103*T*T),
+    N : m(259.1560-1934.1420*T+0.0021*T*T),
+    p1: m(281.2208+1.7192*T+0.00045*T*T)
+  };
+}
+function nodal(kind,N){
+  const n=N*D2R,c=Math.cos,s=Math.sin;
+  switch(kind){
+    case "M2":{const f=1.0004-0.0373*c(n)+0.0002*c(2*n);return[f,-2.14*s(n)];}
+    case "O1":return[1.0089+0.1871*c(n)-0.0147*c(2*n)+0.0014*c(3*n),10.80*s(n)-1.34*s(2*n)+0.19*s(3*n)];
+    case "K1":return[1.0060+0.1150*c(n)-0.0088*c(2*n)+0.0006*c(3*n),-8.86*s(n)+0.68*s(2*n)-0.07*s(3*n)];
+    case "K2":return[1.0241+0.2863*c(n)+0.0083*c(2*n)-0.0015*c(3*n),-17.74*s(n)+0.68*s(2*n)-0.04*s(3*n)];
+    case "J1":return[1.0129+0.1676*c(n)-0.0170*c(2*n)+0.0016*c(3*n),-12.94*s(n)+1.34*s(2*n)-0.19*s(3*n)];
+    case "OO1":return[1.1027+0.6504*c(n)+0.0317*c(2*n)-0.0014*c(3*n),-36.68*s(n)+4.02*s(2*n)-0.57*s(3*n)];
+    case "Mm":return[1.0000-0.1300*c(n)+0.0013*c(2*n),0];
+    case "Mf":return[1.0429+0.4135*c(n)-0.0040*c(2*n),-23.74*s(n)+2.68*s(2*n)-0.38*s(3*n)];
+    case "M4":{const f=1.0004-0.0373*c(n)+0.0002*c(2*n);return[f*f,2*(-2.14*s(n))];}
+    case "M6":{const f=1.0004-0.0373*c(n)+0.0002*c(2*n);return[f*f*f,3*(-2.14*s(n))];}
+    default:return[1,0];
+  }
+}
+// jstMs: JSTでの「見かけの」ミリ秒（= 実UTCms + 9h）として扱う
+function tide(realMs){
+  const a=astro(realMs);
+  const jst=new Date(realMs+9*3600000);
+  const t=jst.getUTCHours()+jst.getUTCMinutes()/60+jst.getUTCSeconds()/3600;
+  const tau=15*t+a.h-a.s;
+  let sum=Z0;
+  for(const[,A,kap,d,ph,kind]of CONST){
+    const V=d[0]*tau+d[1]*a.s+d[2]*a.h+d[3]*a.p+d[4]*a.N+d[5]*a.p1+ph;
+    const[f,u]=nodal(kind,a.N);
+    sum+=f*A*Math.cos((V+u-kap)*D2R);
+  }
+  return sum;
+}
+
+/* ===== 日の出・日の入り ===== */
+function sunTimes(date){
+  const rad=D2R,dayMs=86400000,J1970=2440588,J2000=2451545;
+  const toJulian=d=>d.valueOf()/dayMs-0.5+J1970;
+  const fromJulian=j=>new Date((j+0.5-J1970)*dayMs);
+  const toDays=d=>toJulian(d)-J2000;
+  const e=rad*23.4397;
+  const d=toDays(date);
+  const lw=rad*-LON, phi=rad*LAT;
+  const n=Math.round(d-0.0009-lw/(2*Math.PI));
+  const ds=0.0009+lw/(2*Math.PI)+n;
+  const M=rad*(357.5291+0.98560028*ds);
+  const L=M+rad*(1.9148*Math.sin(M)+0.02*Math.sin(2*M)+0.0003*Math.sin(3*M))+rad*102.9372+Math.PI;
+  const dec=Math.asin(Math.sin(e)*Math.sin(L));
+  const Jtransit=J2000+ds+0.0053*Math.sin(M)-0.0069*Math.sin(2*L);
+  const h0=rad*-0.833;
+  const cosH=(Math.sin(h0)-Math.sin(phi)*Math.sin(dec))/(Math.cos(phi)*Math.cos(dec));
+  const H=Math.acos(Math.max(-1,Math.min(1,cosH)));
+  const a2=0.0009+(H/(2*Math.PI)+lw/(2*Math.PI))+n;
+  const Jset=J2000+a2+0.0053*Math.sin(M)-0.0069*Math.sin(2*L);
+  const Jrise=Jtransit-(Jset-Jtransit);
+  return{rise:fromJulian(Jrise),set:fromJulian(Jset)};
+}
+
+/* ===== 月齢・潮回り ===== */
+function moonAge(date){
+  const synodic=29.530588853;
+  const newMoon=Date.UTC(2000,0,6,18,14,0);
+  let age=((date.getTime()-newMoon)/86400000)%synodic;
+  if(age<0)age+=synodic;
+  return age;
+}
+const TIDE_NAME=[null,"大潮","大潮","大潮","中潮","中潮","中潮","中潮","小潮","小潮","小潮","長潮","若潮","中潮","中潮","大潮","大潮","大潮","大潮","中潮","中潮","中潮","中潮","小潮","小潮","小潮","長潮","若潮","中潮","中潮","大潮"];
+function tideName(date){
+  const d=Math.floor(moonAge(date))+1;
+  return TIDE_NAME[Math.min(30,d)]||"中潮";
+}
+
+/* ===== 1日分の計算 ===== */
+function dayData(baseDate){
+  // baseDate: JST 0:00 のDate
+  const start=baseDate.getTime();
+  const step=2*60000;
+  const pts=[];
+  for(let m=-120*60000;m<=(24*60+120)*60000;m+=step){
+    pts.push({ms:start+m,v:tide(start+m)});
+  }
+  // 極値
+  const ext=[];
+  for(let i=1;i<pts.length-1;i++){
+    const a=pts[i-1].v,b=pts[i].v,c=pts[i+1].v;
+    if(b>=a&&b>=c)ext.push({type:"hi",ms:pts[i].ms,v:b});
+    else if(b<=a&&b<=c)ext.push({type:"lo",ms:pts[i].ms,v:b});
+  }
+  const inDay=ext.filter(e=>e.ms>=start&&e.ms<start+86400000);
+  const sun=sunTimes(new Date(start+12*3600000));
+  // スコア
+  const dayPts=pts.filter(p=>p.ms>=start&&p.ms<=start+86400000);
+  let maxFlow=0;
+  const scored=dayPts.map(p=>{
+    const flow=Math.abs(tide(p.ms+15*60000)-tide(p.ms-15*60000))*2; // cm/h
+    if(flow>maxFlow)maxFlow=flow;
+    return{ms:p.ms,v:p.v,flow};
+  });
+  const sr=sun.rise.getTime(),ss=sun.set.getTime();
+  scored.forEach(p=>{
+    const dSun=Math.min(Math.abs(p.ms-sr),Math.abs(p.ms-ss))/60000;
+    const light=dSun<=45?1:dSun<=90?0.55:0;
+    p.light=light;
+    p.score=0.62*(p.flow/(maxFlow||1))+0.38*light;
+  });
+  return{start,pts,ext,inDay,scored,sun,maxFlow};
+}
+
+/* ===== ベストタイム区間 ===== */
+function bestSlots(d){
+  const TH=0.52;
+  const runs=[];let cur=null;
+  for(const p of d.scored){
+    if(p.score>=TH){
+      if(!cur)cur={from:p.ms,to:p.ms,sum:0,n:0,light:0};
+      cur.to=p.ms;cur.sum+=p.score;cur.n++;cur.light=Math.max(cur.light,p.light);
+    }else if(cur){runs.push(cur);cur=null;}
+  }
+  if(cur)runs.push(cur);
+  return runs
+    .filter(r=>r.to-r.from>=40*60000)
+    .map(r=>({...r,avg:r.sum/r.n}))
+    .sort((a,b)=>b.avg-a.avg)
+    .slice(0,3)
+    .sort((a,b)=>a.from-b.from);
+}
+
+/* ===== 潮の「分（ぶ）」 ===== */
+function tidePhase(d,ms){
+  let prev=null,next=null;
+  for(const e of d.ext){
+    if(e.ms<=ms)prev=e;
+    if(e.ms>ms&&!next)next=e;
+  }
+  if(!prev||!next)return null;
+  const r=(ms-prev.ms)/(next.ms-prev.ms);
+  const bu=Math.max(1,Math.min(10,Math.ceil(r*10)));
+  const dir=prev.type==="lo"?"上げ":"下げ";
+  return{dir,bu,next};
+}
+
+/* ===== 描画 ===== */
+const fmt=ms=>{const d=new Date(ms+9*3600000);return String(d.getUTCHours()).padStart(2,"0")+":"+String(d.getUTCMinutes()).padStart(2,"0");};
+const W=360,H=190,PT=18,PB=26,PL=6,PR=6;
+
+function draw(d){
+  const vals=d.scored.map(p=>p.v);
+  const lo=Math.min(...vals),hi=Math.max(...vals);
+  const yMin=Math.floor((lo-25)/20)*20,yMax=Math.ceil((hi+25)/20)*20;
+  const X=ms=>PL+((ms-d.start)/86400000)*(W-PL-PR);
+  const Y=v=>PT+(1-(v-yMin)/(yMax-yMin))*(H-PT-PB);
+
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="潮位グラフ">`;
+  s+=`<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#46B8AC" stop-opacity=".45"/>
+    <stop offset="1" stop-color="#46B8AC" stop-opacity=".04"/></linearGradient></defs>`;
+
+  // 夜間
+  const sr=d.sun.rise.getTime(),ss=d.sun.set.getTime();
+  s+=`<rect x="${PL}" y="${PT}" width="${X(sr)-PL}" height="${H-PT-PB}" fill="#0D3442" opacity=".85"/>`;
+  s+=`<rect x="${X(ss)}" y="${PT}" width="${W-PR-X(ss)}" height="${H-PT-PB}" fill="#0D3442" opacity=".85"/>`;
+
+  // ベストタイム帯
+  for(const r of bestSlots(d)){
+    s+=`<rect x="${X(r.from)}" y="${PT}" width="${Math.max(2,X(r.to)-X(r.from))}" height="${H-PT-PB}" fill="#F0B429" opacity=".16"/>`;
+  }
+  // 時刻グリッド
+  for(let hh=0;hh<=24;hh+=6){
+    const x=PL+(hh/24)*(W-PL-PR);
+    s+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${H-PB}" stroke="#1D5566" stroke-width="1"/>`;
+    s+=`<text x="${x}" y="${H-PB+14}" fill="#8FB0B4" font-size="10" text-anchor="${hh===0?"start":hh===24?"end":"middle"}">${hh}時</text>`;
+  }
+  // 波形
+  let path="",area="";
+  d.scored.forEach((p,i)=>{
+    const x=X(p.ms),y=Y(p.v);
+    path+=(i?"L":"M")+x.toFixed(1)+" "+y.toFixed(1);
+  });
+  area=path+`L${X(d.start+86400000)} ${H-PB}L${PL} ${H-PB}Z`;
+  s+=`<path d="${area}" fill="url(#wg)"/>`;
+  s+=`<path d="${path}" fill="none" stroke="#46B8AC" stroke-width="2.2" stroke-linejoin="round"/>`;
+
+  // 満干潮ラベル
+  for(const e of d.inDay){
+    const x=X(e.ms),y=Y(e.v);
+    const up=e.type==="hi";
+    s+=`<circle cx="${x}" cy="${y}" r="3.4" fill="${up?"#7FD1C4":"#79A8D8"}"/>`;
+    const tx=Math.max(22,Math.min(W-22,x));
+    s+=`<text x="${tx}" y="${up?y-9:y+17}" fill="${up?"#7FD1C4":"#79A8D8"}" font-size="10.5" font-weight="600" text-anchor="middle">${fmt(e.ms)}</text>`;
+  }
+  // 日の出・日の入り
+  [[sr,"日の出"],[ss,"日の入"]].forEach(([ms,lab])=>{
+    const x=X(ms);
+    s+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${H-PB}" stroke="#F0B429" stroke-width="1" stroke-dasharray="2 3" opacity=".6"/>`;
+  });
+  // 現在時刻
+  const now=Date.now();
+  if(now>=d.start&&now<d.start+86400000){
+    const x=X(now);
+    s+=`<line x1="${x}" y1="${PT-8}" x2="${x}" y2="${H-PB}" stroke="#E6F0EF" stroke-width="1.4"/>`;
+    s+=`<circle cx="${x}" cy="${Y(tide(now))}" r="5" fill="#E6F0EF"/>`;
+    s+=`<text x="${x}" y="${PT-12}" fill="#E6F0EF" font-size="10" text-anchor="middle">いま</text>`;
+  }
+  s+=`</svg>`;
+  return s;
+}
+
+/* ===== 画面更新 ===== */
+let viewDate=jstMidnight(new Date());
+function jstMidnight(dt){
+  const j=new Date(dt.getTime()+9*3600000);
+  return new Date(Date.UTC(j.getUTCFullYear(),j.getUTCMonth(),j.getUTCDate())-9*3600000);
+}
+const WD=["日","月","火","水","木","金","土"];
+
+function render(){
+  const d=dayData(viewDate);
+  const jd=new Date(d.start+9*3600000);
+  const isToday=d.start===jstMidnight(new Date()).getTime();
+
+  document.getElementById("dateLabel").innerHTML=
+    `${jd.getUTCMonth()+1}月${jd.getUTCDate()}日(${WD[jd.getUTCDay()]})<small>${tideName(new Date(d.start+12*3600000))}・大分県日出町</small>`;
+  document.getElementById("picker").value=
+    `${jd.getUTCFullYear()}-${String(jd.getUTCMonth()+1).padStart(2,"0")}-${String(jd.getUTCDate()).padStart(2,"0")}`;
+
+  // ヒーロー
+  const refMs=isToday?Date.now():d.start+9*3600000;
+  const ph=tidePhase(d,refMs);
+  const lv=tide(refMs);
+  document.getElementById("state").innerHTML=
+    isToday
+      ? (ph?`いまは <b>${ph.dir}${ph.bu}分</b>`:"潮位")
+      : `${fmt(refMs)} 時点は <b>${ph?ph.dir+ph.bu+"分":"—"}</b>`;
+  document.getElementById("level").innerHTML=`${Math.round(lv)}<span class="unit">cm</span>`;
+  if(ph){
+    const mins=Math.round((ph.next.ms-refMs)/60000);
+    document.getElementById("nextEvent").innerHTML=
+      `次の${ph.next.type==="hi"?"満潮":"干潮"}は <b>${fmt(ph.next.ms)}</b>（あと${Math.floor(mins/60)}時間${mins%60}分・${Math.round(ph.next.v)}cm）`;
+  }else document.getElementById("nextEvent").textContent="";
+
+  document.getElementById("chart").innerHTML=draw(d);
+
+  // ベストタイム
+  const slots=bestSlots(d);
+  const sr=d.sun.rise.getTime(),ss=d.sun.set.getTime();
+  const box=document.getElementById("slots");
+  if(!slots.length){box.innerHTML=`<div class="empty">この日は潮の動きが弱く、突出した時合がありません。小潮まわりは終日だらだら流れるので、朝夕のマズメ優先で。</div>`;}
+  else{
+    box.innerHTML=slots.map((r,i)=>{
+      const mid=(r.from+r.to)/2;
+      const p=tidePhase(d,mid);
+      const reasons=[];
+      if(p)reasons.push(`${p.dir}${p.bu}分（潮がよく動く）`);
+      if(Math.abs(mid-sr)<90*60000)reasons.push("朝マズメ");
+      if(Math.abs(mid-ss)<90*60000)reasons.push("夕マズメ");
+      const mins=Math.round((r.to-r.from)/60000);
+      return `<div class="slot${i&&r.avg<slots[0].avg*0.9?" sub":""}">
+        <div class="t">${fmt(r.from)} – ${fmt(r.to)}<span style="font-size:13px;font-weight:400;color:var(--muted)"> ／ ${Math.floor(mins/60)?Math.floor(mins/60)+"時間":""}${mins%60?mins%60+"分":""}</span></div>
+        <div class="why">${reasons.join(" ＋ ")}</div>
+      </div>`;
+    }).join("");
+  }
+
+  // 潮位表
+  const rows=d.inDay.slice().sort((a,b)=>a.ms-b.ms).map(e=>
+    `<tr><td><span class="tag ${e.type}">${e.type==="hi"?"満潮":"干潮"}</span></td>
+     <td style="font-weight:600">${fmt(e.ms)}</td><td class="num">${Math.round(e.v)} cm</td></tr>`).join("");
+  document.getElementById("tideTable").innerHTML=
+    `<tr><th style="width:70px">潮</th><th>時刻</th><th class="num">潮位</th></tr>`+rows;
+
+  // メタ
+  const age=moonAge(new Date(d.start+12*3600000));
+  const range=Math.round(Math.max(...d.inDay.map(e=>e.v))-Math.min(...d.inDay.map(e=>e.v)));
+  document.getElementById("meta").innerHTML=`
+    <div><dt>潮回り</dt><dd>${tideName(new Date(d.start+12*3600000))}</dd></div>
+    <div><dt>干満差</dt><dd>${range} cm</dd></div>
+    <div><dt>日の出</dt><dd>${fmt(sr)}</dd></div>
+    <div><dt>日の入り</dt><dd>${fmt(ss)}</dd></div>
+    <div><dt>月齢</dt><dd>${age.toFixed(1)}</dd></div>
+    <div><dt>最大流速の目安</dt><dd>${Math.round(d.maxFlow)} cm/時</dd></div>`;
+}
+
+function shift(days){
+  viewDate=new Date(viewDate.getTime()+days*86400000);
+  viewDate=jstMidnight(viewDate);
+  render();
+}
+document.getElementById("prev").onclick=()=>shift(-1);
+document.getElementById("next").onclick=()=>shift(1);
+document.getElementById("todayBtn").onclick=()=>{viewDate=jstMidnight(new Date());render();};
+document.getElementById("picker").onchange=e=>{
+  const[y,m,dd]=e.target.value.split("-").map(Number);
+  viewDate=new Date(Date.UTC(y,m-1,dd)-9*3600000);
+  render();
+};
+render();
+setInterval(()=>{if(viewDate.getTime()===jstMidnight(new Date()).getTime())render();},60000);
+</script>
+</body>
+</html>
