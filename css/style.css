@@ -505,6 +505,33 @@ td.tm {
   margin-top: 1px;
 }
 
+/* 季節ごとの一覧（日出の朝市に上がる魚）。
+   .meta と違って値が長い文字列なので、1列・横並びにする */
+.season {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.season div {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  background: var(--surface);
+  padding: 11px 14px;
+}
+.season dt {
+  flex: 0 0 86px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.season dd {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
 /* ===== 魚 ===== */
 .fish {
   display: grid;

@@ -1,6 +1,6 @@
 // ハンバーガーメニューから開く全画面パネルの中身。
 
-import { FISH, fishOfMonth } from "../data/fish.js";
+import { FISH, SEASONS, SOURCES, fishOfMonth } from "../data/fish.js";
 import { TERMS } from "../data/terms.js";
 import { GEAR, GEAR_GROUPS } from "../data/gear.js";
 import { weekPanel } from "./week.js";
@@ -8,6 +8,44 @@ import * as store from "../store.js";
 import { WD, escapeHtml, isoJst } from "../format.js";
 
 /* ===== いま釣れる魚 ===== */
+
+/** 日出の朝市に上がる魚を、季節ごとに並べた一覧 */
+function localCatch() {
+  const rows = Object.entries(SEASONS)
+    .map(([season, range]) => {
+      const names = FISH.filter((f) => f.local.includes(season)).map((f) => f.name);
+      return names.length ? `<div><dt>${season}（${range}）</dt><dd>${names.join("、")}</dd></div>` : "";
+    })
+    .join("");
+
+  return `<h4>日出の朝市に上がる魚</h4>
+    <dl class="season">${rows}</dl>
+    <p class="note" style="padding-top:6px">大神漁港「深江の朝市」のお魚暦から、このページで扱っている魚だけを抜き出したものです。
+    お魚暦にはこのほかにブリ・マダイ・ヒラメ・ハモ・ガザミなども載っています。<br>
+    🔴 <b>これは漁の水揚げであって、堤防の釣果ではありません。</b>
+    ここに名前が無い魚（カサゴ・キス・ハゼなど）も堤防では釣れます。朝市に出ないだけです。</p>`;
+}
+
+/** きまりと出どころ。月を変えても中身は変わらない */
+function fishFooter() {
+  return `${localCatch()}
+
+    <h4>守るきまり</h4>
+    <p class="note" style="padding-top:0">大分県では、<b>たこ・あさり・うに・なまこ・いせえび</b>などは第1種共同漁業権の対象です。
+    権利が設定された場所では釣ってはいけません。<br>
+    小さいものを獲ってはいけない決まりもあります。<b>まだこは体重200グラム以下、まだい・ちだいは全長12センチ以下</b>が年中禁止です。<br>
+    遊漁で使えるのは竿釣り・手釣り・たも網・さで網・投網（船を使わないもの）・やす・徒手採捕などに限られます（第46条）。<br>
+    行く場所のきまりは、出かける前に下の出典で確かめてください。</p>
+
+    <h4>この情報の出どころ</h4>
+    <dl>
+      ${SOURCES.map(
+        (s) => `<dt><a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.title}</a></dt>
+          <dd><span class="sm" style="color:var(--muted)">${s.org}</span><br>${s.note}</dd>`
+      ).join("")}
+    </dl>`;
+}
+
 const fishPanel = {
   title: "いま釣れる魚",
   render(body, ctx) {
@@ -17,8 +55,9 @@ const fishPanel = {
         ${months.map((m) => `<button class="btn mbtn" data-m="${m}" style="min-height:44px;padding:0 12px">${m}月</button>`).join("")}
       </div>
       <div id="fishList" class="fish"></div>
-      <p class="note">釣具店や釣り雑誌で一般に言われている時期をまとめた<b>目安</b>です。海水温と年によってずれます。<br>
-      漁業のきまりで獲ってはいけない大きさ・時期が決まっている魚もいます。大分県の漁業調整規則を確認してください。</p>`;
+      <p class="note">月ごとの時期は、釣具店や釣り雑誌で一般に言われているものをまとめた<b>目安</b>です。
+      実測でも出典付きでもなく、海水温と年によってずれます。</p>
+      ${fishFooter()}`;
 
     const list = body.querySelector("#fishList");
     const paint = (m) => {
@@ -270,7 +309,8 @@ const aboutPanel = {
       釣りのニュースは <a href="https://tsurinews.jp/" target="_blank" rel="noopener noreferrer">TSURINEWS</a> と <a href="https://tsurihack.com/" target="_blank" rel="noopener noreferrer">TSURI HACK</a> の配信フィードから、見出しと日付だけを引用しています。本文や画像は載せていません。見出しをタップすると各サイトの元記事へ移動します。記事の著作権はそれぞれの発行元にあります。</p>
 
       <h4>釣れる魚について</h4>
-      <p>釣具店や釣り雑誌で一般に言われている時期をまとめた目安です。実際の釣果を保証するものではありません。</p>
+      <p>月ごとの時期は、釣具店や釣り雑誌で一般に言われているものをまとめた目安です。実際の釣果を保証するものではありません。<br>
+      日出町のお魚暦と大分県のきまりについては、<b>「魚」タブのいちばん下に出典を載せています</b>。獲ってよい大きさや場所のきまりは、出かける前にそちらで確かめてください。</p>
 
       <h4>端末に保存しているもの</h4>
       <p>持ち物チェック・釣行メモ・画面の明るさは、この端末の中だけに保存しています。外部へは送っていません。ブラウザの保存データを消すと一緒に消えます。</p>
