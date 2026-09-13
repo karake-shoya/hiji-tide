@@ -129,6 +129,25 @@ h2 .badge{order:1}  /* ::after の区切り線より右に置く */
 .meta dt{font-size:11.5px;color:var(--muted)}
 .meta dd{font-size:17px;font-weight:600;margin-top:1px}
 
+/* ---- 風 ---- */
+.wind{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-radius:12px;overflow:hidden}
+.wind div{background:var(--deep);padding:9px 4px;text-align:center}
+.wind .h{font-size:11px;color:var(--muted)}
+.wind .v{font-size:17px;font-weight:700;letter-spacing:-0.01em;margin-top:1px}
+.wind .v small{font-size:10.5px;font-weight:500;color:var(--muted);margin-left:1px}
+.wind .d{font-size:11px;color:var(--muted);margin-top:1px}
+.wind .v.strong{color:var(--gold)}
+.wind .v.mid{color:var(--aqua)}
+.windNote{font-size:11.5px;color:var(--muted);padding:7px 2px 0}
+
+/* ---- ニュース ---- */
+.news{list-style:none}
+.news li{border-bottom:1px solid var(--line)}
+.news li:last-child{border-bottom:none}
+.news a{display:block;padding:11px 2px;color:var(--ink);text-decoration:none;font-size:14px;line-height:1.5}
+.news a:active{color:var(--aqua)}
+.news .m{font-size:11.5px;color:var(--muted);margin-top:3px}
+
 /* ---- 用語 ---- */
 .terms summary{
   cursor:pointer;color:var(--aqua);font-size:13px;
@@ -187,11 +206,22 @@ footer b{color:#B9CFD1;font-weight:600}
   <h2>この日の釣りどき<span class="badge" id="dayBadge"></span></h2>
   <div id="slots"></div>
 
+  <section id="windSec" hidden>
+    <h2>風</h2>
+    <div class="wind" id="wind"></div>
+    <div class="windNote" id="windNote"></div>
+  </section>
+
   <h2>満潮・干潮</h2>
   <table id="tideTable"></table>
 
   <h2>この日のデータ</h2>
   <dl class="meta" id="meta"></dl>
+
+  <section id="newsSec" hidden>
+    <h2>釣りのニュース</h2>
+    <ul class="news" id="news"></ul>
+  </section>
 
   <h2>用語</h2>
   <details class="terms">
@@ -237,6 +267,8 @@ footer b{color:#B9CFD1;font-weight:600}
     <b>潮回りの名前について</b><br>
     大潮・小潮などの名前は月齢から求めています。旧暦を基準にした表記とは1日ずれることがあり、名前と実際の干満差が食い違う日もあります（長潮のほうが小潮より大きく動く、など）。強さを見るときは名前より<b>干満差の数値</b>を優先してください。<br><br>
     <b>航行・安全の判断には使わないでください。</b>正確な値は気象庁「潮位表」や海上保安庁の刊行物をご確認ください。<br><br>
+    <b>風とニュースについて</b><br>
+    風は <a href="https://open-meteo.com/" style="color:var(--aqua)" target="_blank" rel="noopener noreferrer">Open-Meteo</a> の予報を表示しています（<a href="https://creativecommons.org/licenses/by/4.0/" style="color:var(--aqua)" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>）。予報のある期間だけ表示され、それ以外の日はこの欄が出ません。釣りのニュースは <a href="https://tsurinews.jp/" style="color:var(--aqua)" target="_blank" rel="noopener noreferrer">TSURINEWS</a> の配信フィードから見出しと日付だけを引用し、本文は掲載していません。見出しをタップすると元記事へ移動します。<br><br>
     出典：「潮汐調和定数（大分）」（海上保安庁海洋情報部）<a href="https://www1.kaiho.mlit.go.jp/TIDE/harmonic/constants/hc.php?s=0163" style="color:var(--aqua)">https://www1.kaiho.mlit.go.jp/TIDE/harmonic/constants/hc.php?s=0163</a><br>
     上記をもとに植野翔也が推算・作図したものです。海上保安庁および気象庁が作成・公表したデータそのものではありません。本サイトは個人が制作したもので、両庁とは一切関係ありません。
   </footer>
@@ -512,6 +544,116 @@ function draw(d,slots){
   return s;
 }
 
+/* ===== 風（Open-Meteo・CC BY 4.0） ===== */
+const DIRS=["北","北北東","北東","東北東","東","東南東","南東","南南東","南","南南西","南西","西南西","西","西北西","北西","北北西"];
+const windDir=deg=>DIRS[Math.round((((deg%360)+360)%360)/22.5)%16];
+const windCache=new Map();   // 日付文字列 → hourly データ（予報の範囲外は null）
+let windGen=0;               // 日付を連打したとき、古い応答を捨てるための世代番号
+
+async function loadWind(iso){
+  if(windCache.has(iso))return windCache.get(iso);
+  const url=`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`
+    +`&hourly=wind_speed_10m,wind_gusts_10m,wind_direction_10m`
+    +`&timezone=Asia%2FTokyo&wind_speed_unit=ms&start_date=${iso}&end_date=${iso}`;
+  try{
+    const r=await fetch(url);
+    const j=await r.json();
+    const h=(j&&j.hourly&&Array.isArray(j.hourly.time))?j.hourly:null;
+    windCache.set(iso,h);    // 範囲外の日（API が error を返す）も覚えて再問い合わせしない
+    return h;
+  }catch(e){
+    return null;             // 通信の失敗は覚えない。次に開いたとき再試行する
+  }
+}
+
+const hourMs=t=>Date.parse(t+":00+09:00");
+
+// 区間 from〜to に重なる時刻の平均風速。データが無ければ null
+function windAvg(h,from,to){
+  let sum=0,n=0;
+  for(let i=0;i<h.time.length;i++){
+    const v=h.wind_speed_10m[i],ms=hourMs(h.time[i]);
+    if(v!=null&&ms>=from&&ms<=to){sum+=v;n++;}
+  }
+  return n?sum/n:null;
+}
+
+function renderWind(h){
+  const box=document.getElementById("wind");
+  box.textContent="";
+  let gust=null,gustAt=0;
+  for(let i=0;i<h.time.length;i++){
+    const g=h.wind_gusts_10m[i];
+    if(g!=null&&(gust===null||g>gust)){gust=g;gustAt=Number(h.time[i].slice(11,13));}
+  }
+  for(const hh of[0,3,6,9,12,15,18,21]){
+    const i=h.time.findIndex(t=>Number(t.slice(11,13))===hh);
+    const sp=i>=0?h.wind_speed_10m[i]:null;
+    const dir=i>=0?h.wind_direction_10m[i]:null;
+    const cls=sp==null?"":sp>=5?" strong":sp>=3?" mid":"";
+    const cell=document.createElement("div");
+    cell.innerHTML=`<div class="h">${hh}時</div>`
+      +`<div class="v${cls}">${sp==null?"—":sp.toFixed(1)}<small>m/s</small></div>`
+      +`<div class="d">${dir==null?"":windDir(dir)}</div>`;
+    box.appendChild(cell);
+  }
+  document.getElementById("windNote").textContent=
+    gust!=null?`最大瞬間 ${gust.toFixed(1)}m/s（${gustAt}時ごろ）。5m/s を超えると釣りにくくなります。`:"";
+}
+
+// 釣りどきの各区間に平均風速を書き足す
+function annotateSlots(h){
+  document.querySelectorAll("#slots .slot").forEach(el=>{
+    const avg=windAvg(h,Number(el.dataset.from),Number(el.dataset.to));
+    const why=el.querySelector(".why");
+    if(avg==null||!why)return;
+    why.textContent+=`　風 ${avg.toFixed(1)}m/s`;
+  });
+}
+
+let windShownFor=null;   // いま風を描いてある日。同じ日の再描画を省くため
+
+function updateWind(d){
+  const gen=++windGen;
+  const iso=isoJst(d.start);
+  const sec=document.getElementById("windSec");
+  // 未取得か範囲外の日だけ隠す。取得済みの日で隠すと、毎分の再描画でセクションが点滅する
+  if(!windCache.get(iso))sec.hidden=true;
+  loadWind(iso).then(h=>{
+    if(gen!==windGen||!h)return;         // 表示中の日が変わっていたら捨てる
+    if(windShownFor!==iso){renderWind(h);windShownFor=iso;}
+    annotateSlots(h);                    // 釣りどきは毎回描き直されるので毎回添える
+    sec.hidden=false;
+  }).catch(()=>{});
+}
+
+/* ===== 釣りのニュース ===== */
+// 日付とは連動しない。起動時に1回だけ読む
+function loadNews(){
+  fetch("/api/news").then(r=>r.json()).then(j=>{
+    const items=(j&&Array.isArray(j.items))?j.items:[];
+    const ul=document.getElementById("news");
+    ul.textContent="";
+    let n=0;
+    for(const it of items){
+      if(!it.title||typeof it.link!=="string"||!it.link.startsWith("https://"))continue;
+      const a=document.createElement("a");
+      a.href=it.link;a.target="_blank";a.rel="noopener noreferrer";
+      a.textContent=it.title;            // 外部由来の文字列なので textContent で入れる
+      const at=it.date?new Date(it.date):null;
+      const m=document.createElement("div");
+      m.className="m";
+      m.textContent=(at&&!isNaN(at)?`${at.getMonth()+1}月${at.getDate()}日・`:"")+(it.source||"");
+      a.appendChild(m);
+      const li=document.createElement("li");
+      li.appendChild(a);
+      ul.appendChild(li);
+      n++;
+    }
+    if(n)document.getElementById("newsSec").hidden=false;
+  }).catch(()=>{});
+}
+
 /* ===== 画面更新 ===== */
 function jstMidnight(dt){
   const j=new Date(dt.getTime()+9*3600000);
@@ -589,7 +731,7 @@ function render(){
       if(Math.abs(mid-sr)<90*60000)reasons.push("朝マズメ");
       if(Math.abs(mid-ss)<90*60000)reasons.push("夕マズメ");
       const mins=Math.round((r.to-r.from)/60000);
-      return `<div class="slot${weak||r.avg<best*0.9?" sub":""}">
+      return `<div class="slot${weak||r.avg<best*0.9?" sub":""}" data-from="${r.from}" data-to="${r.to}">
         <div class="t">${fmtD(r.from,d)} – ${fmtD(r.to,d)}<span style="font-size:13px;font-weight:400;color:var(--muted)"> ／ ${Math.floor(mins/60)?Math.floor(mins/60)+"時間":""}${mins%60?mins%60+"分":""}</span></div>
         <div class="why">${reasons.join(" ＋ ")}</div>
       </div>`;
@@ -618,6 +760,8 @@ function render(){
   try{
     history.replaceState(null,"",isToday?location.pathname:`${location.pathname}?d=${isoJst(d.start)}`);
   }catch(e){}
+
+  updateWind(d);   // 非同期。潮汐の描画はここまでで完結している
 }
 
 function shift(days){
@@ -634,6 +778,7 @@ document.getElementById("picker").onchange=e=>{
   render();
 };
 render();
+loadNews();
 setInterval(()=>{if(viewDate.getTime()===jstMidnight(new Date()).getTime())render();},60000);
 </script>
 </body>
