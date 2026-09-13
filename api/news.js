@@ -1,10 +1,12 @@
 // 釣りニュースの見出しを返す。RSS はブラウザから直接読めない（CORS）ためここで中継する。
 // 記事本文（description / content:encoded）は読み捨てる。見出しと原文リンクだけを返す。
 
-const FEED = "https://tsurinews.jp/feed/";
-const SOURCE = "TSURINEWS";
-const ALLOWED_HOST = "tsurinews.jp";
-const LIMIT = 5;
+const FEEDS = [
+  { url: "https://tsurinews.jp/feed/", name: "TSURINEWS", host: "tsurinews.jp" },
+  { url: "https://tsurihack.com/feed/", name: "TSURI HACK", host: "tsurihack.com" },
+];
+const LIMIT = 6;      // 一覧に出す総件数
+const PER_FEED = 4;   // 1サイトが一覧を占めないようにする上限
 
 // &#8230; のような数値参照と主要な名前付き参照を戻す
 function decodeEntities(s) {
@@ -36,55 +38,65 @@ function pick(block, tag) {
   return m ? unwrap(m[1]) : "";
 }
 
-// 元サイト以外への誘導を防ぐ
-function safeLink(url) {
+// 配信元以外への誘導を防ぐ。リンク先は必ずそのフィードのドメインに限る
+function safeLink(url, host) {
   try {
     const u = new URL(url);
     const ok = u.protocol === "https:" &&
-      (u.hostname === ALLOWED_HOST || u.hostname.endsWith("." + ALLOWED_HOST));
+      (u.hostname === host || u.hostname.endsWith("." + host));
     return ok ? u.href : "";
   } catch {
     return "";
   }
 }
 
-function parseFeed(xml) {
+function parseFeed(xml, feed) {
   return xml
     .split("<item>")
     .slice(1)
     .map((chunk) => chunk.split("</item>")[0])
     .map((block) => {
-      const pub = pick(block, "pubDate");
-      const at = new Date(pub);
+      const at = new Date(pick(block, "pubDate"));
       return {
         title: pick(block, "title"),
-        link: safeLink(pick(block, "link")),
+        link: safeLink(pick(block, "link"), feed.host),
         date: isNaN(at) ? "" : at.toISOString(),
-        source: SOURCE,
+        source: feed.name,
       };
     })
     .filter((it) => it.title && it.link)
-    .slice(0, LIMIT);
+    .slice(0, PER_FEED);
 }
 
-module.exports = async (req, res) => {
-  // 取得に失敗しても 200 と空配列を返す。ページ側はセクションを隠すだけで済む
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
-  res.setHeader("Cache-Control", "s-maxage=1800, stale-while-revalidate=3600");
-
+async function fetchFeed(feed) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 8000);
   try {
-    const r = await fetch(FEED, {
+    const r = await fetch(feed.url, {
       signal: ctrl.signal,
       headers: { "User-Agent": "hiji-tide (+https://hiji-tide.vercel.app/)" },
     });
-    if (!r.ok) throw new Error("feed status " + r.status);
-    const items = parseFeed(await r.text());
-    res.status(200).send(JSON.stringify({ items }));
-  } catch (e) {
-    res.status(200).send(JSON.stringify({ items: [], error: String(e.message || e) }));
+    if (!r.ok) throw new Error(feed.name + " status " + r.status);
+    return parseFeed(await r.text(), feed);
   } finally {
     clearTimeout(timer);
   }
+}
+
+module.exports = async (req, res) => {
+  // 片方のサイトが落ちても、もう片方が取れていれば出す。全滅でも 200 と空配列を返す
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Cache-Control", "s-maxage=1800, stale-while-revalidate=3600");
+
+  const settled = await Promise.allSettled(FEEDS.map(fetchFeed));
+  const items = settled
+    .filter((s) => s.status === "fulfilled")
+    .flatMap((s) => s.value)
+    .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
+    .slice(0, LIMIT);
+  const failed = settled
+    .map((s, i) => (s.status === "rejected" ? FEEDS[i].name : null))
+    .filter(Boolean);
+
+  res.status(200).send(JSON.stringify(failed.length ? { items, failed } : { items }));
 };

@@ -51,13 +51,19 @@ vercel dev --cwd . --listen 4173
 
 ## 釣りニュース
 
-[TSURINEWS](https://tsurinews.jp/) の配信フィードから見出し5件を出す。日付ナビとは連動せず、起動時に1回だけ読む。
+[TSURINEWS](https://tsurinews.jp/) と [TSURI HACK](https://tsurihack.com/) の配信フィードから見出しを出す。日付ナビとは連動せず、起動時に1回だけ読む。
 
+- 各サイトから最大4件を取り、日付の新しい順に並べて上位6件を出す（`PER_FEED` / `LIMIT`）。1サイトが一覧を占めないようにするため。
 - RSS には CORS ヘッダがなくブラウザから直接読めないため、`api/news.js` が中継する。
 - **見出し・日付・原文リンクだけを返す。記事本文（`description` / `content:encoded`）は読み捨てる。**
-- リンクは `tsurinews.jp` のものだけ通す。見出しは `textContent` で入れる。
-- 元サイトへの負荷を抑えるため `s-maxage=1800` で30分キャッシュする。
-- 取得に失敗しても 200 と空配列を返し、ページ側はセクションを隠す。
+- リンクは各フィードのドメインのものだけ通す。見出しは `textContent` で入れる。
+- 片方のサイトが落ちても、もう片方が取れていれば出す。全滅なら空配列を返し、ページ側はセクションを隠す。
+- 元サイトへの負荷を抑えるため `s-maxage=1800` で30分キャッシュする（本番で `x-vercel-cache: HIT` を確認済み）。
+
+### 出典の扱い
+
+TSURI HACK は[著作権ページ](https://tsurihack.com/copyright)で引用の条件を示している。リンクは原則自由・許諾確認不要。引用は「引用部分が従であること」「出典を明記し掲載元へリンクすること」が条件。
+本文を持たず、見出し・日付・出典名・元記事リンクだけを出す今の形はこの条件に沿わせている。フィードを増やすときも同じ条件を守る。
 
 ## 精度
 
@@ -76,4 +82,4 @@ https://www1.kaiho.mlit.go.jp/TIDE/harmonic/constants/hc.php?s=0163
 
 風：[Open-Meteo](https://open-meteo.com/)（[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)）
 
-ニュース見出し：[TSURINEWS](https://tsurinews.jp/)
+ニュース見出し：[TSURINEWS](https://tsurinews.jp/)、[TSURI HACK](https://tsurihack.com/)
