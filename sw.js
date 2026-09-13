@@ -1,10 +1,14 @@
 // 圏外でも潮見表が開くようにするための Service Worker。
 // 潮位・日の出入り・月齢・釣りどきはブラウザ内で計算するので、通信なしで完全に動く。
 //
-// 🔴 css/ か js/ の中身を変えたら VERSION を1つ上げること。ファイルを足したときは SHELL にも書き足す。
-//    静的資産は cache-first で配るので、上げ忘れると古いファイルが配られ続ける。
+// 🔴 css/ か js/ にファイルを足したら SHELL に書き足し、VERSION を1つ上げること。
+//    中身を変えただけなら VERSION はそのままでよい（css と js はネットワーク優先で配るので、
+//    次に開いたときに最新が出る）。
 
-const VERSION = "v3";
+const VERSION = "v4";
+
+/** ネットワークを待つ上限。これを過ぎたらキャッシュで出す（釣り場の弱い電波で待たされないため） */
+const NET_TIMEOUT = 2500;
 const CACHE = `hiji-tide-${VERSION}`;
 
 const SHELL = [
@@ -53,20 +57,25 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-/** 取れたら配って控えも取る。取れなければ控えを配る */
-async function networkFirst(req) {
-  try {
-    const res = await fetch(req);
-    if (res && res.ok) {
-      const c = await caches.open(CACHE);
-      c.put(req, res.clone());
-    }
+/**
+ * ネットワークを先に試し、取れたら控えも更新する。
+ * 遅いときと圏外のときはキャッシュで出す。裏のネットワークはそのまま走らせて控えを新しくするので、
+ * 一度タイムアウトしても次に開いたときには最新になっている。
+ */
+function networkFirst(req) {
+  const net = fetch(req).then((res) => {
+    if (res && res.ok) caches.open(CACHE).then((c) => c.put(req, res.clone()));
     return res;
-  } catch {
+  });
+  net.catch(() => {}); // 誰も待っていない間に失敗しても警告を出さない
+
+  const tooSlow = new Promise((_, reject) => setTimeout(() => reject(new Error("slow")), NET_TIMEOUT));
+
+  return Promise.race([net, tooSlow]).catch(async () => {
     const hit = await caches.match(req);
     if (hit) return hit;
-    throw new Error("offline");
-  }
+    return net; // 控えも無ければ、遅くてもネットワークを待つしかない
+  });
 }
 
 /** 控えがあれば即配る。無ければ取りに行く */
@@ -94,11 +103,14 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // ニュースと天気は鮮度が命。取れなければ控えでしのぐ
-  if (!sameOrigin || url.pathname.startsWith("/api/")) {
+  // ニュースと天気は鮮度が命。
+  // css と js も新しいものを優先する。cache-first にすると、直したものが実機に届くまで
+  // 数回ひらき直す必要があって実用にならなかった（2026-09-13 に実測）
+  if (!sameOrigin || url.pathname.startsWith("/api/") || /^\/(css|js)\//.test(url.pathname)) {
     e.respondWith(networkFirst(req).catch(() => new Response("", { status: 504 })));
     return;
   }
 
+  // アイコンと manifest は変わらないので控えを先に出す
   e.respondWith(cacheFirst(req).catch(() => new Response("", { status: 504 })));
 });
