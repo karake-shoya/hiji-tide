@@ -5,7 +5,7 @@ import { TERMS } from "../data/terms.js";
 import { GEAR, GEAR_GROUPS } from "../data/gear.js";
 import { weekPanel } from "./week.js";
 import * as store from "../store.js";
-import { WD, escapeHtml } from "../format.js";
+import { WD, escapeHtml, isoJst } from "../format.js";
 
 /* ===== いま釣れる魚 ===== */
 const fishPanel = {
@@ -109,6 +109,18 @@ const gearPanel = {
 };
 
 /* ===== 釣行メモ ===== */
+
+/** 読み込んだ結果の知らせ。0件の節は出さない */
+function importText({ added, updated, skipped }) {
+  if (!added && !updated) {
+    return skipped
+      ? `読み込みましたが、${skipped}件ともこの端末の記録の方が新しいので、何も変わりませんでした。`
+      : "このファイルに記録はありませんでした。";
+  }
+  const head = added && updated ? `新しく${added}件を読み込み、${updated}件を更新しました。` : added ? `新しく${added}件を読み込みました。` : `${updated}件を更新しました。`;
+  return head + (skipped ? `${skipped}件はこの端末の記録の方が新しいので、そのままにしました。` : "");
+}
+
 const logPanel = {
   title: "釣行メモ",
   render(body, ctx) {
@@ -147,7 +159,17 @@ const logPanel = {
                 })
                 .join("")
             : '<p class="note" style="padding-top:0">まだありません。釣れた日に書いておくと、次に同じ潮回りの日を開いたとき思い出せます。</p>'
-        }`;
+        }
+
+        <h4>記録の持ち出し</h4>
+        <div class="rowbtns">
+          <button class="btn grow" id="logExport">書き出す</button>
+          <button class="btn grow" id="logImport">読み込む</button>
+        </div>
+        <input type="file" id="logFile" accept="application/json,.json" hidden>
+        <div id="logIo" class="note"></div>
+        <p class="note" style="padding-top:0">端末を変えるときに使います。釣行メモと持ち物が1つのファイルに入ります。
+        読み込むと、同じ日付はあとで保存した方が残ります。ファイルは外へは送りません。</p>`;
 
       body.querySelector("#logSave").addEventListener("click", () => {
         const ok = store.saveLog(ctx.iso, {
@@ -163,6 +185,49 @@ const logPanel = {
       body.querySelector("#logDel")?.addEventListener("click", () => {
         store.deleteLog(ctx.iso);
         paint();
+      });
+
+      /* 書き出し・読み込み */
+      const io = body.querySelector("#logIo");
+      const fileInput = body.querySelector("#logFile");
+
+      body.querySelector("#logExport").addEventListener("click", () => {
+        const url = URL.createObjectURL(new Blob([JSON.stringify(store.exportData(), null, 2)], { type: "application/json" }));
+        const a = document.createElement("a");
+        a.href = url;
+        // download を持たないブラウザ（古い iOS Safari）では新しいタブに出して手で保存してもらう
+        if ("download" in a) a.download = `hiji-tide-${isoJst(Date.now())}.json`;
+        else a.target = "_blank";
+        a.rel = "noopener";
+        // 切り離したままの click を無視するブラウザがあるので、いったん画面に入れてから押す
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 10000); // 保存が始まる前に消さない
+        io.textContent = `${store.logList().length}件の記録を書き出しました。`;
+      });
+
+      body.querySelector("#logImport").addEventListener("click", () => fileInput.click());
+
+      fileInput.addEventListener("change", async () => {
+        const f = fileInput.files?.[0];
+        if (!f) return;
+        io.textContent = "読み込んでいます…";
+        let text = "";
+        try {
+          text = await f.text();
+        } catch {
+          io.textContent = "ファイルを開けませんでした。";
+          return;
+        }
+        fileInput.value = ""; // 同じファイルをもう一度選べるようにする
+        const r = store.importData(text);
+        if (!r.ok) {
+          io.textContent = r.reason;
+          return;
+        }
+        paint(); // 一覧を描き直す。io は消えるので、描いたあとに書き戻す
+        body.querySelector("#logIo").textContent = importText(r);
       });
     };
     paint();
