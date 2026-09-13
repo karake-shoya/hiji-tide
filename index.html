@@ -116,6 +116,13 @@ td.num{text-align:right;color:var(--muted)}
 .tag.hi{background:rgba(127,209,196,.15);color:var(--rise)}
 .tag.lo{background:rgba(121,168,216,.15);color:var(--fall)}
 
+/* ---- 日の強弱バッジ ---- */
+.badge{font-size:11.5px;padding:2px 9px;border-radius:999px;font-weight:600;white-space:nowrap}
+h2 .badge{order:1}  /* ::after の区切り線より右に置く */
+.badge.strong{background:rgba(240,180,41,.16);color:var(--gold)}
+.badge.mid{background:rgba(70,184,172,.14);color:var(--aqua)}
+.badge.calm{background:rgba(143,176,180,.12);color:var(--muted)}
+
 /* ---- メタ ---- */
 .meta{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border-radius:12px;overflow:hidden}
 .meta div{background:var(--deep);padding:12px 14px}
@@ -158,7 +165,7 @@ footer b{color:#B9CFD1;font-weight:600}
     <span><span class="swatch" style="background:#2B4A57"></span>夜間</span>
   </div>
 
-  <h2>この日の釣りどき</h2>
+  <h2>この日の釣りどき<span class="badge" id="dayBadge"></span></h2>
   <div id="slots"></div>
 
   <h2>満潮・干潮</h2>
@@ -170,6 +177,8 @@ footer b{color:#B9CFD1;font-weight:600}
   <footer>
     <b>精度について</b><br>
     潮位は大分験潮所の潮汐調和定数（2021年算定・27分潮）から推算した天文潮位です。日出町は別府湾内で大分・別府とほぼ同潮時のため、その値を使っています。大潮〜中潮では気象庁の公式予測と時刻で±10分、潮位で±10cm程度の一致ですが、<b>小潮まわりは満干潮の時刻が最大1時間ほどずれます</b>（潮位曲線が平坦で極値が定まりにくいため）。実際の潮位は気圧・風でも変わります。<br><br>
+    <b>潮回りの名前について</b><br>
+    大潮・小潮などの名前は月齢から求めています。旧暦を基準にした表記とは1日ずれることがあり、名前と実際の干満差が食い違う日もあります（長潮のほうが小潮より大きく動く、など）。強さを見るときは名前より<b>干満差の数値</b>を優先してください。<br><br>
     <b>航行・安全の判断には使わないでください。</b>正確な値は気象庁「潮位表」や海上保安庁の刊行物をご確認ください。<br><br>
     出典：「潮汐調和定数（大分）」（海上保安庁海洋情報部）<a href="https://www1.kaiho.mlit.go.jp/TIDE/harmonic/constants/hc.php?s=0163" style="color:var(--aqua)">https://www1.kaiho.mlit.go.jp/TIDE/harmonic/constants/hc.php?s=0163</a><br>
     上記をもとに植野翔也が推算・作図したものです。海上保安庁および気象庁が作成・公表したデータそのものではありません。本サイトは個人が制作したもので、両庁とは一切関係ありません。
@@ -296,12 +305,15 @@ function tideName(date){
 }
 
 /* ===== 1日分の計算 ===== */
+const FLOW_REF=50;   // 流速スコアの基準（cm/時）。大潮の最大流速がほぼこの値
 function dayData(baseDate){
   // baseDate: JST 0:00 のDate
   const start=baseDate.getTime();
+  const end=start+86400000;
   const step=2*60000;
+  // 極値の検出は前後6時間まで見る。日をまたぐ時合の「上げ何分」を出すのに必要
   const pts=[];
-  for(let m=-120*60000;m<=(24*60+120)*60000;m+=step){
+  for(let m=-360*60000;m<=(24*60+360)*60000;m+=step){
     pts.push({ms:start+m,v:tide(start+m)});
   }
   // 極値
@@ -311,14 +323,13 @@ function dayData(baseDate){
     if(b>=a&&b>=c)ext.push({type:"hi",ms:pts[i].ms,v:b});
     else if(b<=a&&b<=c)ext.push({type:"lo",ms:pts[i].ms,v:b});
   }
-  const inDay=ext.filter(e=>e.ms>=start&&e.ms<start+86400000);
+  const inDay=ext.filter(e=>e.ms>=start&&e.ms<end);
   const sun=sunTimes(new Date(start+12*3600000));
-  // スコア
-  const dayPts=pts.filter(p=>p.ms>=start&&p.ms<=start+86400000);
+  // スコアは前後2時間ぶんだけ作る。日をまたぐ時合を切らずにつなぐため
   let maxFlow=0;
-  const scored=dayPts.map(p=>{
+  const scored=pts.filter(p=>p.ms>=start-120*60000&&p.ms<=end+120*60000).map(p=>{
     const flow=Math.abs(tide(p.ms+15*60000)-tide(p.ms-15*60000))*2; // cm/h
-    if(flow>maxFlow)maxFlow=flow;
+    if(p.ms>=start&&p.ms<end&&flow>maxFlow)maxFlow=flow;
     return{ms:p.ms,v:p.v,flow};
   });
   const sr=sun.rise.getTime(),ss=sun.set.getTime();
@@ -326,17 +337,17 @@ function dayData(baseDate){
     const dSun=Math.min(Math.abs(p.ms-sr),Math.abs(p.ms-ss))/60000;
     const light=dSun<=45?1:dSun<=90?0.55:0;
     p.light=light;
-    p.score=0.62*(p.flow/(maxFlow||1))+0.38*light;
+    // 分母はその日の最大ではなく固定値。日をまたいで強さを比べられるようにする
+    p.score=0.62*Math.min(1,p.flow/FLOW_REF)+0.38*light;
   });
-  return{start,pts,ext,inDay,scored,sun,maxFlow};
+  return{start,end,pts,ext,inDay,scored,sun,maxFlow};
 }
 
 /* ===== ベストタイム区間 ===== */
-function bestSlots(d){
-  const TH=0.52;
+function slotsAt(d,th){
   const runs=[];let cur=null;
   for(const p of d.scored){
-    if(p.score>=TH){
+    if(p.score>=th){
       if(!cur)cur={from:p.ms,to:p.ms,sum:0,n:0,light:0};
       cur.to=p.ms;cur.sum+=p.score;cur.n++;cur.light=Math.max(cur.light,p.light);
     }else if(cur){runs.push(cur);cur=null;}
@@ -344,10 +355,19 @@ function bestSlots(d){
   if(cur)runs.push(cur);
   return runs
     .filter(r=>r.to-r.from>=40*60000)
+    .filter(r=>r.to>d.start&&r.from<d.end)   // その日と重なる区間だけ残す
     .map(r=>({...r,avg:r.sum/r.n}))
-    .sort((a,b)=>b.avg-a.avg)
-    .slice(0,3)
-    .sort((a,b)=>a.from-b.from);
+    .sort((a,b)=>b.avg-a.avg);
+}
+// 戻り値の weak は「潮が動かない日に次善の1件を出した」ことを示す
+function bestSlots(d){
+  const main=slotsAt(d,0.52);
+  if(main.length)return{slots:main.slice(0,3).sort((a,b)=>a.from-b.from),weak:false};
+  for(const th of[0.48,0.42]){        // 60日分の実測で 0.42 まで下げれば必ず1件は出る
+    const r=slotsAt(d,th);
+    if(r.length)return{slots:[r[0]],weak:true};
+  }
+  return{slots:[],weak:true};
 }
 
 /* ===== 潮の「分（ぶ）」 ===== */
@@ -366,10 +386,13 @@ function tidePhase(d,ms){
 
 /* ===== 描画 ===== */
 const fmt=ms=>{const d=new Date(ms+9*3600000);return String(d.getUTCHours()).padStart(2,"0")+":"+String(d.getUTCMinutes()).padStart(2,"0");};
+// 表示中の日からはみ出す時刻に「前」「翌」を付ける
+const fmtD=(ms,d)=>(ms<d.start?"前":ms>=d.end?"翌":"")+fmt(ms);
 const W=360,H=190,PT=18,PB=26,PL=6,PR=6;
 
-function draw(d){
-  const vals=d.scored.map(p=>p.v);
+function draw(d,slots){
+  const dayPts=d.scored.filter(p=>p.ms>=d.start&&p.ms<=d.end);
+  const vals=dayPts.map(p=>p.v);
   const lo=Math.min(...vals),hi=Math.max(...vals);
   const yMin=Math.floor((lo-25)/20)*20,yMax=Math.ceil((hi+25)/20)*20;
   const X=ms=>PL+((ms-d.start)/86400000)*(W-PL-PR);
@@ -385,9 +408,11 @@ function draw(d){
   s+=`<rect x="${PL}" y="${PT}" width="${X(sr)-PL}" height="${H-PT-PB}" fill="#0D3442" opacity=".85"/>`;
   s+=`<rect x="${X(ss)}" y="${PT}" width="${W-PR-X(ss)}" height="${H-PT-PB}" fill="#0D3442" opacity=".85"/>`;
 
-  // ベストタイム帯
-  for(const r of bestSlots(d)){
-    s+=`<rect x="${X(r.from)}" y="${PT}" width="${Math.max(2,X(r.to)-X(r.from))}" height="${H-PT-PB}" fill="#F0B429" opacity=".16"/>`;
+  // ベストタイム帯（日をまたぐ区間はグラフの端で切る）
+  const clampX=ms=>Math.max(PL,Math.min(W-PR,X(ms)));
+  for(const r of slots){
+    const x0=clampX(r.from),x1=clampX(r.to);
+    s+=`<rect x="${x0}" y="${PT}" width="${Math.max(2,x1-x0)}" height="${H-PT-PB}" fill="#F0B429" opacity=".16"/>`;
   }
   // 時刻グリッド
   for(let hh=0;hh<=24;hh+=6){
@@ -397,11 +422,11 @@ function draw(d){
   }
   // 波形
   let path="",area="";
-  d.scored.forEach((p,i)=>{
+  dayPts.forEach((p,i)=>{
     const x=X(p.ms),y=Y(p.v);
     path+=(i?"L":"M")+x.toFixed(1)+" "+y.toFixed(1);
   });
-  area=path+`L${X(d.start+86400000)} ${H-PB}L${PL} ${H-PB}Z`;
+  area=path+`L${X(d.end)} ${H-PB}L${PL} ${H-PB}Z`;
   s+=`<path d="${area}" fill="url(#wg)"/>`;
   s+=`<path d="${path}" fill="none" stroke="#46B8AC" stroke-width="2.2" stroke-linejoin="round"/>`;
 
@@ -420,7 +445,7 @@ function draw(d){
   });
   // 現在時刻
   const now=Date.now();
-  if(now>=d.start&&now<d.start+86400000){
+  if(now>=d.start&&now<d.end){
     const x=X(now);
     s+=`<line x1="${x}" y1="${PT-8}" x2="${x}" y2="${H-PB}" stroke="#E6F0EF" stroke-width="1.4"/>`;
     s+=`<circle cx="${x}" cy="${Y(tide(now))}" r="5" fill="#E6F0EF"/>`;
@@ -431,22 +456,47 @@ function draw(d){
 }
 
 /* ===== 画面更新 ===== */
-let viewDate=jstMidnight(new Date());
 function jstMidnight(dt){
   const j=new Date(dt.getTime()+9*3600000);
   return new Date(Date.UTC(j.getUTCFullYear(),j.getUTCMonth(),j.getUTCDate())-9*3600000);
 }
+const isoJst=ms=>{
+  const j=new Date(ms+9*3600000);
+  return `${j.getUTCFullYear()}-${String(j.getUTCMonth()+1).padStart(2,"0")}-${String(j.getUTCDate()).padStart(2,"0")}`;
+};
+// URL の ?d=YYYY-MM-DD を読む。書式違いと 2026-02-31 のような日付は捨てて今日に戻す
+function dateFromQuery(){
+  const q=new URLSearchParams(location.search).get("d");
+  if(!q||!/^\d{4}-\d{2}-\d{2}$/.test(q))return null;
+  const[y,m,dd]=q.split("-").map(Number);
+  const t=new Date(Date.UTC(y,m-1,dd));
+  if(t.getUTCFullYear()!==y||t.getUTCMonth()!==m-1||t.getUTCDate()!==dd)return null;
+  return new Date(t.getTime()-9*3600000);
+}
+let viewDate=dateFromQuery()||jstMidnight(new Date());
 const WD=["日","月","火","水","木","金","土"];
 
 function render(){
   const d=dayData(viewDate);
   const jd=new Date(d.start+9*3600000);
   const isToday=d.start===jstMidnight(new Date()).getTime();
+  const noon=new Date(d.start+12*3600000);
+  const {slots,weak}=bestSlots(d);
+  const range=d.inDay.length
+    ? Math.round(Math.max(...d.inDay.map(e=>e.v))-Math.min(...d.inDay.map(e=>e.v)))
+    : null;
 
+  // 潮回りの名前より干満差の数値を先に出す（名前は月齢由来で旧暦とずれるため）
   document.getElementById("dateLabel").innerHTML=
-    `${jd.getUTCMonth()+1}月${jd.getUTCDate()}日(${WD[jd.getUTCDay()]})<small>${tideName(new Date(d.start+12*3600000))}・大分県日出町</small>`;
-  document.getElementById("picker").value=
-    `${jd.getUTCFullYear()}-${String(jd.getUTCMonth()+1).padStart(2,"0")}-${String(jd.getUTCDate()).padStart(2,"0")}`;
+    `${jd.getUTCMonth()+1}月${jd.getUTCDate()}日(${WD[jd.getUTCDay()]})<small>${range!==null?`干満差${range}cm・`:""}${tideName(noon)}</small>`;
+  document.getElementById("picker").value=isoJst(d.start);
+
+  // 判定は表示と同じ丸めた値で行う（45 と出ているのに「ふつう」になるのを防ぐ）
+  const flowR=Math.round(d.maxFlow);
+  const badge=flowR>=45?["strong","よく動く"]:flowR>=35?["mid","ふつう"]:["calm","静か"];
+  const badgeEl=document.getElementById("dayBadge");
+  badgeEl.className="badge "+badge[0];
+  badgeEl.textContent=badge[1];
 
   // ヒーロー
   const refMs=isToday?Date.now():d.start+9*3600000;
@@ -463,24 +513,27 @@ function render(){
       `次の${ph.next.type==="hi"?"満潮":"干潮"}は <b>${fmt(ph.next.ms)}</b>（あと${Math.floor(mins/60)}時間${mins%60}分・${Math.round(ph.next.v)}cm）`;
   }else document.getElementById("nextEvent").textContent="";
 
-  document.getElementById("chart").innerHTML=draw(d);
+  document.getElementById("chart").innerHTML=draw(d,slots);
 
   // ベストタイム
-  const slots=bestSlots(d);
   const sr=d.sun.rise.getTime(),ss=d.sun.set.getTime();
   const box=document.getElementById("slots");
   if(!slots.length){box.innerHTML=`<div class="empty">この日は潮の動きが弱く、突出した時合がありません。小潮まわりは終日だらだら流れるので、朝夕のマズメ優先で。</div>`;}
   else{
-    box.innerHTML=slots.map((r,i)=>{
-      const mid=(r.from+r.to)/2;
+    // 弱い区間を薄く出す基準は最高スコア。slots は時刻順なので先頭が最高とは限らない
+    const best=Math.max(...slots.map(r=>r.avg));
+    box.innerHTML=(weak?`<div class="empty">この日は突出した時合がありません。強いて挙げるならこの時間帯です。</div>`:"")
+      +slots.map(r=>{
+      // 日をまたぐ区間は、その日に入っている部分の中間で潮の状態を見る
+      const mid=(Math.max(r.from,d.start)+Math.min(r.to,d.end))/2;
       const p=tidePhase(d,mid);
       const reasons=[];
-      if(p)reasons.push(`${p.dir}${p.bu}分（潮がよく動く）`);
+      if(p)reasons.push(`${p.dir}${p.bu}分（${weak?"この日では動くほう":"潮がよく動く"}）`);
       if(Math.abs(mid-sr)<90*60000)reasons.push("朝マズメ");
       if(Math.abs(mid-ss)<90*60000)reasons.push("夕マズメ");
       const mins=Math.round((r.to-r.from)/60000);
-      return `<div class="slot${i&&r.avg<slots[0].avg*0.9?" sub":""}">
-        <div class="t">${fmt(r.from)} – ${fmt(r.to)}<span style="font-size:13px;font-weight:400;color:var(--muted)"> ／ ${Math.floor(mins/60)?Math.floor(mins/60)+"時間":""}${mins%60?mins%60+"分":""}</span></div>
+      return `<div class="slot${weak||r.avg<best*0.9?" sub":""}">
+        <div class="t">${fmtD(r.from,d)} – ${fmtD(r.to,d)}<span style="font-size:13px;font-weight:400;color:var(--muted)"> ／ ${Math.floor(mins/60)?Math.floor(mins/60)+"時間":""}${mins%60?mins%60+"分":""}</span></div>
         <div class="why">${reasons.join(" ＋ ")}</div>
       </div>`;
     }).join("");
@@ -494,15 +547,20 @@ function render(){
     `<tr><th style="width:70px">潮</th><th>時刻</th><th class="num">潮位</th></tr>`+rows;
 
   // メタ
-  const age=moonAge(new Date(d.start+12*3600000));
-  const range=Math.round(Math.max(...d.inDay.map(e=>e.v))-Math.min(...d.inDay.map(e=>e.v)));
+  const age=moonAge(noon);
   document.getElementById("meta").innerHTML=`
-    <div><dt>潮回り</dt><dd>${tideName(new Date(d.start+12*3600000))}</dd></div>
-    <div><dt>干満差</dt><dd>${range} cm</dd></div>
+    <div><dt>干満差</dt><dd>${range!==null?range+" cm":"—"}</dd></div>
+    <div><dt>潮回り</dt><dd>${tideName(noon)}</dd></div>
     <div><dt>日の出</dt><dd>${fmt(sr)}</dd></div>
     <div><dt>日の入り</dt><dd>${fmt(ss)}</dd></div>
     <div><dt>月齢</dt><dd>${age.toFixed(1)}</dd></div>
-    <div><dt>最大流速の目安</dt><dd>${Math.round(d.maxFlow)} cm/時</dd></div>`;
+    <div><dt>最大流速の目安</dt><dd>${flowR} cm/時</dd></div>`;
+
+  // 表示中の日を URL に載せる。連打で履歴が溜まらないよう replaceState を使う
+  // file:// やサンドボックス内では例外になるので、失敗しても描画は止めない
+  try{
+    history.replaceState(null,"",isToday?location.pathname:`${location.pathname}?d=${isoJst(d.start)}`);
+  }catch(e){}
 }
 
 function shift(days){
