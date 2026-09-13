@@ -29,8 +29,10 @@
   color-scheme: dark;
 }
 
-/* 日中の屋外向け。反射に負けないようコントラストを上げてある */
-[data-theme="bright"] {
+/* 日中の屋外向け。反射に負けないようコントラストを上げてある。
+   🔴 :root に限定すること。`[data-theme="bright"]` だけで書くと、
+   切替ボタンの data-theme 属性にもマッチしてそのボタンの中だけ配色が変わる */
+:root[data-theme="bright"] {
   --bg: #f4f8f8;
   --surface: #ffffff;
   --surface-2: #e7f0f1;
@@ -77,8 +79,8 @@ body {
   line-height: 1.65;
   max-width: 560px;
   margin: 0 auto;
-  /* 下部の日付バーぶんを空ける */
-  padding-bottom: calc(92px + env(safe-area-inset-bottom));
+  /* 下部のタブぶんを空ける */
+  padding-bottom: calc(78px + env(safe-area-inset-bottom));
   overscroll-behavior-y: none;
 }
 .wrap {
@@ -112,14 +114,10 @@ a {
 
 /* ===== トップバー ===== */
 .topbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: calc(10px + env(safe-area-inset-top)) 10px 8px 16px;
+  padding: calc(10px + env(safe-area-inset-top)) 16px 4px;
 }
 .brand {
-  flex: 1;
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.25;
@@ -580,22 +578,18 @@ td.tm {
   color: var(--accent);
 }
 
-/* ===== 下部の日付バー ===== */
+/* ===== 上部の日付バー（スクロールしても残る） ===== */
 .datebar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: sticky;
+  top: 0;
   z-index: 20;
   display: flex;
   align-items: center;
   gap: 8px;
-  max-width: 560px;
-  margin: 0 auto;
-  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  padding: 6px 16px 10px;
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
   backdrop-filter: blur(12px);
-  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
 }
 .datebar .nav {
   width: 52px;
@@ -658,61 +652,113 @@ td.tm {
   border-color: var(--accent);
 }
 
-/* ===== ドロワー・パネル・シート ===== */
+/* ===== 下部のタブ ===== */
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 25;
+  max-width: 560px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.tabbar button {
+  position: relative;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 7px 2px 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+/* いまどのタブにいるかを、色だけでなく形でも示す */
+.tabbar button[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 22%;
+  right: 22%;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 0 0 3px 3px;
+}
+.tabbar button .ic {
+  font-size: 22px;
+  line-height: 1.15;
+  /* 選ばれていないタブの絵文字は色を落として、いまどこにいるかを分かりやすくする */
+  filter: grayscale(1) opacity(0.65);
+}
+.tabbar button[aria-current="page"] {
+  color: var(--accent);
+}
+.tabbar button[aria-current="page"] .ic {
+  filter: none;
+}
+.tabbar button:active {
+  background: var(--surface-2);
+}
+
+/* ===== ビューの切り替え ===== */
+#viewLog,
+#viewFish,
+#viewMore {
+  padding-top: 16px;
+}
+
+/* その他タブの一覧 */
+.morelist {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.morerow {
+  width: 100%;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 16px;
+  background: var(--surface);
+  font-size: 17px;
+  font-weight: 600;
+  text-align: left;
+}
+.morerow:active {
+  background: var(--surface-2);
+}
+.morerow .ic {
+  font-size: 21px;
+  width: 26px;
+  text-align: center;
+}
+.morerow::after {
+  content: "›";
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 22px;
+}
+
+/* ===== パネル・シート ===== */
 .scrim {
   position: fixed;
   inset: 0;
   z-index: 30;
   background: rgba(0, 0, 0, 0.5);
 }
-.drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 40;
-  width: min(86vw, 340px);
-  background: var(--surface);
-  border-left: 1px solid var(--line);
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-  padding: calc(12px + env(safe-area-inset-top)) 0 calc(12px + env(safe-area-inset-bottom));
-  overflow-y: auto;
-}
-.drawer .dtitle {
-  font-size: 13px;
-  color: var(--muted);
-  padding: 4px 18px 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-.drawer nav {
-  display: flex;
-  flex-direction: column;
-}
-.drawer nav button {
-  min-height: 56px;
-  padding: 0 18px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  font-size: 17px;
-  font-weight: 600;
-  text-align: left;
-  border-bottom: 1px solid var(--line-soft);
-}
-.drawer nav button:active {
-  background: var(--surface-2);
-}
-.drawer nav button .em {
-  font-size: 21px;
-  width: 26px;
-  text-align: center;
-}
-.drawer .theme {
-  margin: 14px 18px 0;
-}
+
+/* 明るさの切り替え（その他タブ） */
 .theme-toggle {
   display: flex;
   gap: 1px;

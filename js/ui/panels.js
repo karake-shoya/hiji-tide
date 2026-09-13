@@ -216,4 +216,30 @@ const aboutPanel = {
   },
 };
 
-export const PANELS = { fish: fishPanel, gear: gearPanel, log: logPanel, terms: termsPanel, about: aboutPanel };
+/* ===== その他（タブ） ===== */
+const morePanel = {
+  title: "その他",
+  render(body) {
+    const theme = store.getTheme();
+    body.innerHTML = `
+      <div class="morelist">
+        <button class="morerow" data-panel="gear"><span class="ic">🎒</span>持ち物チェック</button>
+        <button class="morerow" data-panel="terms"><span class="ic">📖</span>用語の説明</button>
+        <button class="morerow" data-panel="about"><span class="ic">ℹ️</span>このサイトについて</button>
+      </div>
+
+      <h2>画面の明るさ</h2>
+      <div class="theme-toggle" role="group" aria-label="画面の明るさ">
+        <button class="theme-btn" data-theme="dark" aria-pressed="${theme === "dark"}">🌙 暗い</button>
+        <button class="theme-btn" data-theme="bright" aria-pressed="${theme === "bright"}">☀️ 明るい</button>
+      </div>
+      <p class="note">日中の屋外では「明るい」のほうが見やすくなります。</p>
+
+      <h2>このページについて</h2>
+      <p class="note" style="padding-top:0">潮位は海上保安庁が公開する大分験潮所の調和定数からブラウザの中で計算しています。
+      持ち物チェックと釣行メモはこの端末だけに保存され、外へは送りません。<br>
+      <b>航行・安全の判断には使わないでください。</b></p>`;
+  },
+};
+
+export const PANELS = { fish: fishPanel, gear: gearPanel, log: logPanel, terms: termsPanel, about: aboutPanel, more: morePanel };

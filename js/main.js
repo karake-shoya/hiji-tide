@@ -6,13 +6,13 @@ import { jstMidnight, isoJst, jstParts, dateFromQuery, parseIsoJst, WD } from ".
 import { loadWeather, cachedWeather } from "./weather.js";
 import { isScrubbing } from "./chart.js";
 import { loadNews } from "./news.js";
-import { initChrome, openPanel } from "./ui/menu.js";
+import { initNav, showTab, refreshTab } from "./ui/nav.js";
 import * as view from "./ui/view.js";
 
 const $ = (id) => document.getElementById(id);
 
 let viewDate = dateFromQuery() || jstMidnight(new Date());
-let current = null; // 最後に描いた日のデータ。パネルへ渡すのに使う
+let current = null; // 最後に描いた日のデータ。各画面へ渡すのに使う
 
 /* ===== 天気（非同期。潮汐の描画はこれを待たない） ===== */
 let weatherGen = 0; // 日付を連打したとき、古い応答を捨てるための世代番号
@@ -37,7 +37,8 @@ function updateWeather(d) {
     .catch(() => {});
 }
 
-/* ===== 描画 ===== */
+/* ===== 潮の画面 ===== */
+// 潮タブが隠れているときも描いておく。戻ったときに古い「いま」が出ないようにするため
 function render() {
   const d = dayData(viewDate);
   const isToday = d.start === jstMidnight(new Date()).getTime();
@@ -59,7 +60,7 @@ function render() {
   view.renderFishPreview(jstParts(d.start).m);
 
   // 表示中の日を URL に載せる。連打で履歴が溜まらないよう replaceState を使う
-  // file:// やサンドボックス内では例外になるので、失敗しても描画は止めない
+  // タブの情報（history.state）は残す。file:// では例外になるが描画は止めない
   try {
     history.replaceState(history.state, "", isToday ? location.pathname : `${location.pathname}?d=${iso}`);
   } catch {}
@@ -67,7 +68,7 @@ function render() {
   updateWeather(d);
 }
 
-/** パネルへ渡す、表示中の日の情報 */
+/** 各画面へ渡す、表示中の日の情報 */
 function context() {
   const d = current.d;
   const p = jstParts(d.start);
@@ -84,10 +85,11 @@ function context() {
 function goto(date) {
   viewDate = jstMidnight(date);
   render();
+  refreshTab(); // 釣果と魚も表示中の日に追随させる
 }
 
 /* ===== 起動 ===== */
-initChrome(context);
+initNav(context);
 
 $("prev").addEventListener("click", () => goto(new Date(viewDate.getTime() - 86400000)));
 $("next").addEventListener("click", () => goto(new Date(viewDate.getTime() + 86400000)));
@@ -98,6 +100,10 @@ $("picker").addEventListener("change", (e) => {
 });
 
 render();
+
+// 釣行メモをすぐ書けるよう、?log=1 で開いたときは釣果タブから始める
+// （履歴は積まない。戻るでサイトを離れてしまうため）
+if (new URLSearchParams(location.search).get("log") === "1") showTab("log", true);
 
 loadNews().then(view.renderNews);
 
@@ -112,6 +118,3 @@ setInterval(() => {
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
 }
-
-// 釣行メモをすぐ書けるよう、?log=1 で開いたときはメモを開く
-if (new URLSearchParams(location.search).get("log") === "1") openPanel("log", context());

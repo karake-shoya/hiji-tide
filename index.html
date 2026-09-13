@@ -25,63 +25,13 @@
 
 <header class="topbar">
   <div class="brand">日出の潮<span>大分県日出町・別府湾</span></div>
-  <button class="icon-btn" id="menuBtn" aria-label="メニューを開く" aria-expanded="false" aria-controls="drawer">☰</button>
 </header>
 
 <noscript>
   <p style="padding:16px;line-height:1.8">このページは潮位をブラウザの中で計算して表示します。JavaScript を有効にしてください。</p>
 </noscript>
 
-<!-- いま行くべきか -->
-<section class="verdict" id="verdict" aria-live="polite"></section>
-<div id="recall"></div>
-
-<!-- 今の潮 -->
-<section class="now" id="now"></section>
-
-<main class="wrap">
-  <div class="chartbox">
-    <div class="chart" id="chart"></div>
-    <div class="readout" id="readout"></div>
-    <div class="legend">
-      <span><span class="swatch" style="background:var(--gold)"></span>釣りどき</span>
-      <span><span class="swatch" style="background:var(--accent)"></span>潮位</span>
-      <span><span class="swatch" style="background:var(--night)"></span>夜間</span>
-    </div>
-  </div>
-
-  <h2><button class="term" data-term="best">この日の釣りどき</button><span class="badge" id="dayBadge"></span></h2>
-  <div id="slots"></div>
-
-  <section id="weatherSec" hidden>
-    <h2>天気と風</h2>
-    <div class="weather" id="weather"></div>
-    <p class="note" id="weatherNote"></p>
-  </section>
-
-  <h2><button class="term" data-term="hilo">満潮・干潮</button></h2>
-  <table id="tideTable"></table>
-
-  <h2>この日のデータ</h2>
-  <dl class="meta" id="meta"></dl>
-
-  <h2>いま釣れる魚</h2>
-  <div class="fish" id="fishPreview"></div>
-  <button class="btn grow" id="moreFish" style="margin-top:10px;width:100%">ほかの魚も見る</button>
-
-  <section id="newsSec" hidden>
-    <h2>釣りのニュース</h2>
-    <ul class="news" id="news"></ul>
-  </section>
-
-  <footer>
-    潮位は海上保安庁が公開する大分験潮所の調和定数から推算したものです。<br>
-    <b>航行・安全の判断には使わないでください。</b><br>
-    <button class="btn" id="aboutBtn" style="margin-top:12px">精度と出典について</button>
-  </footer>
-</main>
-
-<!-- 下部の日付バー -->
+<!-- 日付。スクロールしても上に残る -->
 <nav class="datebar" aria-label="日付の切り替え">
   <button class="nav" id="prev" aria-label="前の日">‹</button>
   <div class="dateface">
@@ -93,28 +43,75 @@
   <button class="today" id="todayBtn">今日</button>
 </nav>
 
-<!-- ドロワー -->
-<div class="scrim" id="scrim" hidden></div>
-<aside class="drawer" id="drawer" hidden aria-label="メニュー">
-  <div class="dtitle">メニュー</div>
-  <nav>
-    <button data-panel="fish"><span class="em">🐟</span>いま釣れる魚</button>
-    <button data-panel="gear"><span class="em">🎒</span>持ち物チェック</button>
-    <button data-panel="log"><span class="em">📝</span>釣行メモ</button>
-    <button data-panel="terms"><span class="em">📖</span>用語の説明</button>
-    <button data-panel="about"><span class="em">ℹ️</span>このサイトについて</button>
-  </nav>
-  <div class="theme">
-    <div class="dtitle" style="padding:14px 0 8px">画面の明るさ</div>
-    <div class="theme-toggle" role="group" aria-label="画面の明るさ">
-      <button id="themeDark" aria-pressed="true">🌙 暗い</button>
-      <button id="themeBright" aria-pressed="false">☀️ 明るい</button>
-    </div>
-    <p class="note" style="padding-top:8px">日中の屋外では「明るい」のほうが見やすくなります。</p>
-  </div>
-</aside>
+<main>
+  <!-- 潮 -->
+  <section class="view" id="viewTide">
+    <section class="verdict" id="verdict" aria-live="polite"></section>
+    <div id="recall"></div>
+    <section class="now" id="now"></section>
 
-<!-- 全画面パネル -->
+    <div class="wrap">
+      <div class="chartbox">
+        <div class="chart" id="chart"></div>
+        <div class="readout" id="readout"></div>
+        <div class="legend">
+          <span><span class="swatch" style="background:var(--gold)"></span>釣りどき</span>
+          <span><span class="swatch" style="background:var(--accent)"></span>潮位</span>
+          <span><span class="swatch" style="background:var(--night)"></span>夜間</span>
+        </div>
+      </div>
+
+      <h2><button class="term" data-term="best">この日の釣りどき</button><span class="badge" id="dayBadge"></span></h2>
+      <div id="slots"></div>
+
+      <section id="weatherSec" hidden>
+        <h2>天気と風</h2>
+        <div class="weather" id="weather"></div>
+        <p class="note" id="weatherNote"></p>
+      </section>
+
+      <h2><button class="term" data-term="hilo">満潮・干潮</button></h2>
+      <table id="tideTable"></table>
+
+      <h2>この日のデータ</h2>
+      <dl class="meta" id="meta"></dl>
+
+      <h2>いま釣れる魚</h2>
+      <div class="fish" id="fishPreview"></div>
+      <button class="btn grow" data-go="fish" style="margin-top:10px;width:100%">ほかの魚も見る</button>
+
+      <section id="newsSec" hidden>
+        <h2>釣りのニュース</h2>
+        <ul class="news" id="news"></ul>
+      </section>
+
+      <footer>
+        潮位は海上保安庁が公開する大分験潮所の調和定数から推算したものです。<br>
+        <b>航行・安全の判断には使わないでください。</b><br>
+        <button class="btn" data-panel="about" style="margin-top:12px">精度と出典について</button>
+      </footer>
+    </div>
+  </section>
+
+  <!-- 釣果 -->
+  <section class="view wrap" id="viewLog" hidden></section>
+
+  <!-- 魚 -->
+  <section class="view wrap" id="viewFish" hidden></section>
+
+  <!-- その他 -->
+  <section class="view wrap" id="viewMore" hidden></section>
+</main>
+
+<!-- 下部のタブ -->
+<nav class="tabbar" aria-label="画面の切り替え">
+  <button data-tab="tide" aria-current="page"><span class="ic">🌊</span>潮</button>
+  <button data-tab="log"><span class="ic">📝</span>釣果</button>
+  <button data-tab="fish"><span class="ic">🐟</span>魚</button>
+  <button data-tab="more"><span class="ic">☰</span>その他</button>
+</nav>
+
+<!-- 全画面パネル（その他タブから開く） -->
 <div class="panel" id="panel" hidden role="dialog" aria-modal="true" aria-labelledby="panelTitle">
   <div class="phead">
     <h3 id="panelTitle"></h3>
@@ -124,6 +121,7 @@
 </div>
 
 <!-- 用語のボトムシート -->
+<div class="scrim" id="scrim" hidden></div>
 <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
   <div class="grip"></div>
   <h3 id="sheetTitle"></h3>

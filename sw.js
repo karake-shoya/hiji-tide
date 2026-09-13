@@ -4,7 +4,7 @@
 // 🔴 js/ にファイルを足したら SHELL に書き足し、VERSION を1つ上げること。
 //    上げ忘れると古いファイルが配られ続ける。
 
-const VERSION = "v1";
+const VERSION = "v2";
 const CACHE = `hiji-tide-${VERSION}`;
 
 const SHELL = [
@@ -30,7 +30,7 @@ const SHELL = [
   "/js/data/gear.js",
   "/js/data/terms.js",
   "/js/ui/view.js",
-  "/js/ui/menu.js",
+  "/js/ui/nav.js",
   "/js/ui/panels.js",
 ];
 
