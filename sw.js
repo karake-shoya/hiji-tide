@@ -1,10 +1,10 @@
 // 圏外でも潮見表が開くようにするための Service Worker。
 // 潮位・日の出入り・月齢・釣りどきはブラウザ内で計算するので、通信なしで完全に動く。
 //
-// 🔴 js/ にファイルを足したら SHELL に書き足し、VERSION を1つ上げること。
-//    上げ忘れると古いファイルが配られ続ける。
+// 🔴 css/ か js/ の中身を変えたら VERSION を1つ上げること。ファイルを足したときは SHELL にも書き足す。
+//    静的資産は cache-first で配るので、上げ忘れると古いファイルが配られ続ける。
 
-const VERSION = "v2";
+const VERSION = "v3";
 const CACHE = `hiji-tide-${VERSION}`;
 
 const SHELL = [
