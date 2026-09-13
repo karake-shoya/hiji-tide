@@ -129,6 +129,25 @@ h2 .badge{order:1}  /* ::after の区切り線より右に置く */
 .meta dt{font-size:11.5px;color:var(--muted)}
 .meta dd{font-size:17px;font-weight:600;margin-top:1px}
 
+/* ---- 用語 ---- */
+.terms summary{
+  cursor:pointer;color:var(--aqua);font-size:13px;
+  padding:10px 14px;background:var(--deep);border:1px solid var(--line);border-radius:10px;
+  list-style:none;
+}
+.terms summary::-webkit-details-marker{display:none}
+.terms summary::after{content:" ▾";color:var(--muted)}
+.terms[open] summary{border-radius:10px 10px 0 0;border-bottom:none}
+.terms[open] summary::after{content:" ▴"}
+.terms .body{
+  background:var(--deep);
+  border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;
+  padding:4px 14px 14px;font-size:13.5px;line-height:1.75;color:var(--muted);
+}
+.terms dt{color:var(--ink);font-weight:600;margin-top:13px}
+.terms dd{margin-top:1px}
+.terms b{color:#B9CFD1;font-weight:600}
+
 footer{
   font-size:11.5px;color:var(--muted);line-height:1.7;
   margin-top:28px;padding-top:16px;border-top:1px solid var(--line);
@@ -173,6 +192,44 @@ footer b{color:#B9CFD1;font-weight:600}
 
   <h2>この日のデータ</h2>
   <dl class="meta" id="meta"></dl>
+
+  <h2>用語</h2>
+  <details class="terms">
+    <summary>「上げ7分」「マズメ」「長潮」などの読み方</summary>
+    <div class="body">
+      <dl>
+        <dt>上げ◯分（ぶ）／下げ◯分</dt>
+        <dd>干潮から満潮までを「上げ」、満潮から干潮までを「下げ」と呼び、その区間を10等分して今どのあたりかを表します。<b>上げ7分</b>なら満潮まで残り3割ほど。潮がいちばん速く動くのは3分〜7分あたりで、1分と10分の前後は動きが止まります。</dd>
+
+        <dt>マズメ</dt>
+        <dd>日の出前後と日の入り前後の、空が薄明るい時間帯。魚の活性が上がるとされます。朝マズメ・夕マズメと呼び分けます。このページでは日の出・日の入りの前後45分をとくに重く見ています。</dd>
+
+        <dt>時合（じあい）</dt>
+        <dd>魚がよく釣れる時間帯のこと。潮が動く時間とマズメが重なると時合になりやすい、というのがこのページの「釣りどき」の考え方です。</dd>
+
+        <dt>潮位</dt>
+        <dd>基準面から測った海面の高さ。この表では大分験潮所の基準面を使っています。大きく引く日はマイナスになることもあります（2026年の推算では最低 -22cm）。</dd>
+
+        <dt>満潮・干潮</dt>
+        <dd>潮位が最も高くなる時刻と、最も低くなる時刻。ふつうは1日に2回ずつですが、時刻が日をまたぐ都合でどちらかが1回だけの日もあります（2026年で48日）。</dd>
+
+        <dt>干満差</dt>
+        <dd>その日の最高潮位と最低潮位の差。大きいほど海水がたくさん動きます。潮回りの名前より、この数値のほうが実態に合います。</dd>
+
+        <dt>潮回り</dt>
+        <dd>月の満ち欠けによる潮の大きさの周期。<b>大潮</b>が最も干満差が大きく、<b>中潮</b>、<b>小潮</b>の順に小さくなります。<b>長潮</b>は小潮のあとの動きが鈍い日、<b>若潮</b>は長潮の翌日で再び大きくなり始める日を指します。</dd>
+
+        <dt>月齢</dt>
+        <dd>新月からの日数。0前後が新月、約15が満月。新月と満月のころが大潮になります。</dd>
+
+        <dt>最大流速の目安</dt>
+        <dd>潮位が1時間あたり何センチ変わるかの、その日の最大値。潮の動きの速さの目安で、このページの釣りどき判定にも使っています。</dd>
+
+        <dt>よく動く／ふつう／静か</dt>
+        <dd>上の最大流速による3段階です。45cm/時以上が「よく動く」、35以上が「ふつう」、それ未満が「静か」。日をまたいで同じものさしで比べられます。</dd>
+      </dl>
+    </div>
+  </details>
 
   <footer>
     <b>精度について</b><br>
