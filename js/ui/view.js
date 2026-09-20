@@ -5,7 +5,7 @@ import { moonPhase, tideName } from "../astro.js";
 import { tidePhase, slotReasons, dayStrength, nowVerdict } from "../fishing.js";
 import { drawChart, attachScrub } from "../chart.js";
 import { fmt, fmtD, isoJst, jstParts, WD, durationText, untilText, escapeHtml } from "../format.js";
-import { sky, windDir, windClass, threeHourly, peakGust, conditionsOver } from "../weather.js";
+import { sky, windDir, windClass, threeHourly, peakGust, conditionsOver, cautionOf } from "../weather.js";
 import { fishOfMonth } from "../data/fish.js";
 import { termButton } from "../data/terms.js";
 import { similarLog } from "../store.js";
@@ -146,7 +146,9 @@ export function renderSlots(d, slots, weak) {
     ? `<div class="empty">「次点」は本命ほど潮が動かない時間帯です。都合が合わない日や、本命が深夜のときの二の手に。</div>`
     : "";
 
+  // 天気の注意書きは weather.js の取得を待って annotateSlots が埋める（通信が落ちても空のまま）
   box.innerHTML =
+    `<div class="caution day" hidden></div>` +
     lead +
     slots
       .map((r) => {
@@ -157,6 +159,7 @@ export function renderSlots(d, slots, weak) {
           <div class="t">${fmtD(r.from, d)} – ${fmtD(r.to, d)}<span class="len">${durationText(mins)}</span>${tier}</div>
           <div class="why">${reasonsText(slotReasons(d, r, weak))}</div>
           <div class="env"></div>
+          <div class="caution" hidden></div>
         </div>`;
       })
       .join("") +
@@ -186,8 +189,40 @@ export function renderWeather(h) {
     : "";
 }
 
-/** 釣りどきの各区間に、その時間帯の気温・降水確率・風を書き足す */
+/* ===== 釣りに向かない天気の注意書き ===== */
+
+const CAUTION_HEAD = {
+  avoid: "⚠ この時間帯は釣りに向きません",
+  warn: "⚠ 行くなら用心してください",
+};
+
+/** 1枚に出す理由の数。重い順に並んでいるので、あふれたぶんは軽いほうから落ちる */
+const CAUTION_MAX = 3;
+
+function paintCaution(box, level, reasons, head) {
+  if (!box) return;
+  box.className = box.classList.contains("day") ? "caution day" : "caution";
+  if (!level) {
+    box.hidden = true;
+    box.textContent = "";
+    return;
+  }
+  box.classList.add(level);
+  box.hidden = false;
+  box.innerHTML =
+    `<b>${head || CAUTION_HEAD[level]}</b>` +
+    reasons
+      .slice(0, CAUTION_MAX)
+      .map((r) => `<span>${r}</span>`)
+      .join("");
+}
+
+/**
+ * 釣りどきの各区間に、その時間帯の気温・降水確率・風と、荒れるときの注意書きを足す。
+ * 注意書きは採点には入らない（fishing.js は天気を見ていない）ので、ここで添えるだけ。
+ */
 export function annotateSlots(h) {
+  const levels = [];
   document.querySelectorAll("#slots .slot").forEach((el) => {
     const a = conditionsOver(h, Number(el.dataset.from), Number(el.dataset.to));
     const env = el.querySelector(".env");
@@ -197,7 +232,21 @@ export function annotateSlots(h) {
     if (a.pop != null) parts.push(`☂ ${a.pop}%`);
     if (a.wind != null) parts.push(`💨 ${a.wind.toFixed(1)}m/s`);
     env.innerHTML = parts.map((p) => `<span>${p}</span>`).join("");
+
+    const c = cautionOf(a);
+    levels.push(c.level);
+    paintCaution(el.querySelector(".caution"), c.level, c.reasons);
   });
+
+  // どの時間帯も「向かない」日は、節の頭でまとめて断っておく。
+  // 1本でも行ける時間帯があるなら、区間ごとの注意書きだけで足りる
+  const allBad = levels.length > 0 && levels.every((l) => l === "avoid");
+  paintCaution(
+    document.querySelector("#slots .caution.day"),
+    allBad ? "avoid" : null,
+    ["時間帯をずらしても逃げられないので、日を変えることも考えてください。"],
+    "⚠ この日は天気か風が荒れます"
+  );
 }
 
 /* ===== 満潮・干潮 ===== */
