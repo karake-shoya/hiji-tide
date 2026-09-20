@@ -22,7 +22,7 @@ const msOf = (d, x) => d.start + ((x - PL) / (W - PL - PR)) * 86400000;
 /**
  * その日の潮位カーブを描く。
  * @param {object} d dayData() の戻り値
- * @param {object[]} slots 釣りどきの区間
+ * @param {object[]} slots 釣りどきの区間（sub が立つ次点は薄い帯にする）
  */
 export function drawChart(d, slots) {
   const dayPts = d.scored.filter((p) => p.ms >= d.start && p.ms <= d.end);
@@ -50,7 +50,7 @@ export function drawChart(d, slots) {
   for (const r of slots) {
     const x0 = clampX(r.from),
       x1 = clampX(r.to);
-    s += `<rect x="${x0}" y="${PT}" width="${Math.max(2, x1 - x0)}" height="${H - PT - PB}" fill="var(--chart-band)"/>`;
+    s += `<rect x="${x0}" y="${PT}" width="${Math.max(2, x1 - x0)}" height="${H - PT - PB}" fill="var(--chart-band${r.sub ? "-sub" : ""})"/>`;
   }
 
   // 時刻の目盛り

@@ -26,6 +26,8 @@
   --shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
   --chart-grid: #1d5566;
   --chart-band: rgba(240, 180, 41, 0.22);
+  /* 次点の帯。本命と見分けがつくよう半分ほどの濃さにする */
+  --chart-band-sub: rgba(240, 180, 41, 0.1);
   color-scheme: dark;
 }
 
@@ -54,6 +56,7 @@
   --chart-grid: #b4c9cd;
   /* 明るい地では薄い帯が飛ぶので、暗いテーマより濃くする */
   --chart-band: rgba(196, 122, 0, 0.34);
+  --chart-band-sub: rgba(196, 122, 0, 0.15);
   color-scheme: light;
 }
 
@@ -358,6 +361,16 @@ h2 .badge {
   font-weight: 500;
   color: var(--muted);
   margin-left: 6px;
+}
+.slot .t .tier {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-left: 8px;
+  vertical-align: 3px;
 }
 .slot .why {
   font-size: 14.5px;

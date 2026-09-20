@@ -12,6 +12,15 @@ export const FLOW_REF = 50;
 const TH_MAIN = 0.52;
 const TH_FALLBACK = [0.48, 0.42];
 
+/** 次点を拾う段階。本命が少ない日に、この順で閾値を下げて足りないぶんを補う */
+const TH_EXTRA = [0.48, 0.42, 0.36];
+
+/** 1日に出す時間帯の数（本命＋次点）。2026年を全日実測すると必ず2本以上は取れる */
+const WANT_SLOTS = 3;
+
+/** 本命からこの間隔より近い区間は、同じ山を閾値違いで拾い直しただけとみなして捨てる */
+const EXTRA_GAP_MS = 60 * 60000;
+
 /** 区間として認める最短の長さ */
 const MIN_RUN_MS = 40 * 60000;
 
@@ -91,20 +100,51 @@ function slotsAt(d, th) {
 }
 
 /**
+ * 本命が WANT_SLOTS に届かない日に、閾値を下げて次点の時間帯を拾う。
+ *
+ * 🔴 本命の判定（TH_MAIN と weak）には触らない。ここで拾うのは「ほかに挙げるならここ」
+ *    という弱い時間帯なので、必ず sub が立つ。画面は本命と見分けがつく形で出すこと。
+ */
+function extraSlots(d, picked) {
+  const out = [];
+  // 本命と同じ山を閾値違いで拾い直したもの、次点どうしの重なりを落とす
+  const clashes = (r) => [...picked, ...out].some((p) => r.from - EXTRA_GAP_MS < p.to && p.from - EXTRA_GAP_MS < r.to);
+  for (const th of TH_EXTRA) {
+    for (const r of slotsAt(d, th)) {
+      if (picked.length + out.length >= WANT_SLOTS) return out.sort((a, b) => a.from - b.from);
+      if (!clashes(r)) out.push({ ...r, sub: true });
+    }
+  }
+  return out.sort((a, b) => a.from - b.from);
+}
+
+/**
  * その日の釣りどき。
+ * slots が本命、extra が次点（弱いので sub が立つ）。
  * weak は「潮が動かない日に次善の1件を出した」ことを示す。
+ *
+ * 🔴 slots と weak は採点式そのものなので、過去の日と比べられるよう出方を変えない。
+ *    件数を2〜3本に揃えるのは extra の仕事。
  */
 export function bestSlots(d) {
   const main = slotsAt(d, TH_MAIN);
-  if (main.length) return { slots: main.slice(0, 3).sort((a, b) => a.from - b.from), weak: false };
+  if (main.length) {
+    const slots = main.slice(0, 3).sort((a, b) => a.from - b.from);
+    return { slots, weak: false, extra: extraSlots(d, slots) };
+  }
   for (const th of TH_FALLBACK) {
     const r = slotsAt(d, th);
-    if (r.length) return { slots: [r[0]], weak: true };
+    if (r.length) return { slots: [r[0]], weak: true, extra: extraSlots(d, [r[0]]) };
   }
-  // 0件になる日はある。2026年を全日実測すると 4/9 の1日だけで、
+  // 本命が0件になる日はある。2026年を全日実測すると 4/9 の1日だけで、
   // 0.42 以上の区間は3本あるがどれも34分しか続かず MIN_RUN_MS に届かない。
-  // 呼び出し側は空を受け取る前提で書くこと。
-  return { slots: [], weak: true };
+  // その日も extra は取れるが、呼び出し側は slots が空の前提で書くこと。
+  return { slots: [], weak: true, extra: extraSlots(d, []) };
+}
+
+/** 本命と次点を時刻順に1本の並びへ。画面とグラフはこれを出す */
+export function allSlots({ slots, extra }) {
+  return [...slots, ...(extra || [])].sort((a, b) => a.from - b.from);
 }
 
 /** 潮の「上げ◯分／下げ◯分」。前後の極値が取れないときは null */
@@ -124,6 +164,7 @@ export function tidePhase(d, ms) {
 
 /**
  * 釣りどき区間の理由。「上げ5分（潮がよく動く） ＋ 朝マズメ」のもと。
+ * 次点（slot.sub）は本命より弱いので、潮の動きの言い方を落とす。
  * @returns {string[]}
  */
 export function slotReasons(d, slot, weak) {
@@ -133,7 +174,8 @@ export function slotReasons(d, slot, weak) {
   const sr = d.sun.rise.getTime(),
     ss = d.sun.set.getTime();
   const reasons = [];
-  if (p) reasons.push(`${p.dir}${p.bu}分（${weak ? "この日では動くほう" : "潮がよく動く"}）`);
+  const tone = slot.sub ? "本命ほどではない" : weak ? "この日では動くほう" : "潮がよく動く";
+  if (p) reasons.push(`${p.dir}${p.bu}分（${tone}）`);
   if (Math.abs(mid - sr) < 90 * 60000) reasons.push("朝マズメ");
   if (Math.abs(mid - ss) < 90 * 60000) reasons.push("夕マズメ");
   return reasons;

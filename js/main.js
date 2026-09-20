@@ -1,6 +1,6 @@
 // 起動と配線。日付が変わるたびにここから描画をやり直す。
 
-import { dayData, bestSlots } from "./fishing.js";
+import { dayData, bestSlots, allSlots } from "./fishing.js";
 import { tideName } from "./astro.js";
 import { jstMidnight, isoJst, jstParts, dateFromQuery, parseIsoJst, WD } from "./format.js";
 import { loadWeather, cachedWeather } from "./weather.js";
@@ -43,7 +43,10 @@ function updateWeather(d) {
 function render() {
   const d = dayData(viewDate);
   const isToday = d.start === jstMidnight(new Date()).getTime();
-  const { slots, weak } = bestSlots(d);
+  const best = bestSlots(d);
+  const { slots, weak } = best;
+  // 画面とグラフには次点も出す。いま行くべきかの判定は本命（slots）だけで行う
+  const shown = allSlots(best);
   // 今日は現在時刻、それ以外の日は朝9時を基準に見る（画面にも「09:00 時点は」と出る）
   const refMs = isToday ? Date.now() : d.start + 9 * 3600000;
   const iso = isoJst(d.start);
@@ -53,9 +56,9 @@ function render() {
   view.renderVerdict(d, slots, weak, isToday, Date.now());
   view.renderRecall(d, iso);
   view.renderNow(d, isToday, refMs);
-  view.renderChart(d, slots);
+  view.renderChart(d, shown);
   view.renderBadge(d);
-  view.renderSlots(d, slots, weak);
+  view.renderSlots(d, shown, weak);
   view.renderTideTable(d);
   view.renderMeta(d);
   view.renderFishPreview(jstParts(d.start).m);
