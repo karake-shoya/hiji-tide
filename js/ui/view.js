@@ -41,7 +41,24 @@ function paintVerdict(tone, cap, head, sub) {
   box.innerHTML = html;
 }
 
-export function renderVerdict(d, slots, weak, isToday, nowMs) {
+/**
+ * 判定カードに足す、天気の注意書き（1行）。
+ * 🔴 **理由はいちばん重い1つだけ。** 残りは下の「この日の釣りどき」に出ているので繰り返さない。
+ * @param {object|null} h その日の予報。まだ取れていなければ null（何も足さない）
+ */
+function verdictCaution(h, slot) {
+  if (!h || !slot) return "";
+  const c = cautionOf(conditionsOver(h, slot.from, slot.to));
+  if (!c.level) return "";
+  const more = c.reasons.length > 1 ? `<i>ほか${c.reasons.length - 1}件</i>` : "";
+  return `<div class="vwarn ${c.level}"><b>${CAUTION_HEAD[c.level]}</b>${c.reasons[0]}${more}</div>`;
+}
+
+/**
+ * @param {object|null} h その日の予報。天気は後から届くので、届いたらもう一度この関数を呼ぶ。
+ *   カードは中身が変わったときだけ描き直すので（paintVerdict）、呼び直しても読み上げは重ならない
+ */
+export function renderVerdict(d, slots, weak, isToday, nowMs, h) {
   const calmDay = `潮の動きが弱い日です。朝夕の${termButton("mazume", "マズメ")}を優先してください。`;
 
   // 今日以外は「その日のいちばん」を出す
@@ -52,7 +69,7 @@ export function renderVerdict(d, slots, weak, isToday, nowMs) {
       weak ? "soon" : "go",
       "この日のいちばん",
       `${fmtD(top.from, d)} – ${fmtD(top.to, d)}`,
-      reasonsText(slotReasons(d, top, weak))
+      reasonsText(slotReasons(d, top, weak)) + verdictCaution(h, top)
     );
   }
 
@@ -62,7 +79,8 @@ export function renderVerdict(d, slots, weak, isToday, nowMs) {
       "go",
       "いまの海",
       "いまが釣りどき",
-      `${reasonsText(v.reasons)}<br>この時間帯は <b>${fmtD(v.current.to, d)}</b> まで（あと${untilText(v.endsInMs)}）`
+      `${reasonsText(v.reasons)}<br>この時間帯は <b>${fmtD(v.current.to, d)}</b> まで（あと${untilText(v.endsInMs)}）` +
+        verdictCaution(h, v.current)
     );
   }
   if (v.level === "soon") {
@@ -70,7 +88,8 @@ export function renderVerdict(d, slots, weak, isToday, nowMs) {
       "soon",
       "いまの海",
       "もうすぐ釣りどき",
-      `<b>${fmtD(v.next.from, d)}</b> から ${fmtD(v.next.to, d)}（あと${untilText(v.msToNext)}）<br>${reasonsText(v.reasons)}`
+      `<b>${fmtD(v.next.from, d)}</b> から ${fmtD(v.next.to, d)}（あと${untilText(v.msToNext)}）<br>${reasonsText(v.reasons)}` +
+        verdictCaution(h, v.next)
     );
   }
   const tail = v.next

@@ -207,6 +207,33 @@ a {
   color: var(--ink);
   font-weight: 700;
 }
+/* 判定カードに足す天気の注意書き。理由はいちばん重い1つだけ（残りは釣りどき欄に出る） */
+.verdict .vwarn {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px dashed color-mix(in srgb, var(--warn) 50%, transparent);
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.verdict .vwarn b {
+  display: block;
+  color: var(--warn);
+  font-weight: 700;
+}
+.verdict .vwarn i {
+  font-style: normal;
+  color: var(--muted);
+  margin-left: 6px;
+  white-space: nowrap;
+}
+.verdict .vwarn.avoid {
+  border-top-color: color-mix(in srgb, var(--alert) 55%, transparent);
+}
+.verdict .vwarn.avoid b {
+  color: var(--alert);
+}
+
 .verdict.go {
   --tone: var(--go);
 }
