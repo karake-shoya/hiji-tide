@@ -23,6 +23,9 @@
   --go: #f0b429;
   --soon: #46b8ac;
   --rest: #8fb0b4;
+  /* 天気の注意書き。--warn が「用心して」、--alert が「向きません」 */
+  --warn: #ffc65c;
+  --alert: #ff8f80;
   --shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
   --chart-grid: #1d5566;
   --chart-band: rgba(240, 180, 41, 0.22);
@@ -52,6 +55,9 @@
   --go: #8a5500;
   --soon: #0a6a62;
   --rest: #4c6a73;
+  /* 反射の下でも赤と橙が見分けられるよう、暗いテーマより濃くする */
+  --warn: #7a4a00;
+  --alert: #a8201a;
   --shadow: 0 6px 20px rgba(6, 32, 41, 0.16);
   --chart-grid: #b4c9cd;
   /* 明るい地では薄い帯が飛ぶので、暗いテーマより濃くする */
@@ -201,6 +207,33 @@ a {
   color: var(--ink);
   font-weight: 700;
 }
+/* 判定カードに足す天気の注意書き。理由はいちばん重い1つだけ（残りは釣りどき欄に出る） */
+.verdict .vwarn {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px dashed color-mix(in srgb, var(--warn) 50%, transparent);
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.verdict .vwarn b {
+  display: block;
+  color: var(--warn);
+  font-weight: 700;
+}
+.verdict .vwarn i {
+  font-style: normal;
+  color: var(--muted);
+  margin-left: 6px;
+  white-space: nowrap;
+}
+.verdict .vwarn.avoid {
+  border-top-color: color-mix(in srgb, var(--alert) 55%, transparent);
+}
+.verdict .vwarn.avoid b {
+  color: var(--alert);
+}
+
 .verdict.go {
   --tone: var(--go);
 }
@@ -395,6 +428,37 @@ h2 .badge {
   font-size: 15px;
   line-height: 1.7;
   padding: 4px 0 10px;
+}
+
+/* 釣りに向かない天気の注意書き。区間の中と、節の頭（.day）に出る */
+.caution {
+  margin-top: 8px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.65;
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 42%, transparent);
+}
+.caution b {
+  display: block;
+  font-size: 14.5px;
+  color: var(--warn);
+}
+.caution span {
+  display: block;
+  color: var(--ink-2);
+}
+.caution.avoid {
+  background: color-mix(in srgb, var(--alert) 13%, transparent);
+  border-color: color-mix(in srgb, var(--alert) 46%, transparent);
+}
+.caution.avoid b {
+  color: var(--alert);
+}
+/* 節の頭に出すぶんは区間の枠から外に置くので、上の余白を詰めて下へ空ける */
+.caution.day {
+  margin: 0 0 12px;
 }
 
 /* ===== 天気・風 ===== */

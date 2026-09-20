@@ -33,9 +33,16 @@ function updateWeather(d) {
         weatherShownFor = iso;
       }
       view.annotateSlots(h); // 釣りどきは毎回描き直されるので毎回添える
+      drawVerdict(h); // 判定カードにも「荒れます」の一行を足す
       sec.hidden = false;
     })
     .catch(() => {});
+}
+
+/** 判定カードを描く。天気は後から届くので、届いた時点でもう一度ここを通す */
+function drawVerdict(h) {
+  const c = current;
+  view.renderVerdict(c.d, c.slots, c.weak, c.isToday, Date.now(), h || cachedWeather(c.iso) || null);
 }
 
 /* ===== 潮の画面 ===== */
@@ -50,10 +57,10 @@ function render() {
   // 今日は現在時刻、それ以外の日は朝9時を基準に見る（画面にも「09:00 時点は」と出る）
   const refMs = isToday ? Date.now() : d.start + 9 * 3600000;
   const iso = isoJst(d.start);
-  current = { d, iso, isToday };
+  current = { d, iso, isToday, slots, weak };
 
   view.renderDateBar(d, isToday);
-  view.renderVerdict(d, slots, weak, isToday, Date.now());
+  drawVerdict();
   view.renderRecall(d, iso);
   view.renderNow(d, isToday, refMs);
   view.renderChart(d, shown);

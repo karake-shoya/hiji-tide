@@ -74,15 +74,18 @@ const hourMs = (t) => Date.parse(t + ":00+09:00");
 
 /**
  * 区間 from〜to に重なる時刻の天気をまとめる。データが無い項目は null。
- * ⚠ 風と気温は平均だが、**降水確率だけは区間内の最大値**を返す。
+ * ⚠ 風と気温は平均だが、**降水確率・突風は区間内の最大値**を返す。
  *    3時間のうち1時間だけ100%の区間を「平均33%」と出すと、雨を見落とすため。
+ *    codes はその区間に出た天気コードの並び（重複なし・出た順）。雷や雪を拾うのに使う。
  */
 export function conditionsOver(h, from, to) {
   let ws = 0,
     wn = 0,
     ts = 0,
     tn = 0,
-    pMax = null;
+    pMax = null,
+    gMax = null;
+  const codes = [];
   for (let i = 0; i < h.time.length; i++) {
     const ms = hourMs(h.time[i]);
     if (ms < from || ms > to) continue;
@@ -98,8 +101,12 @@ export function conditionsOver(h, from, to) {
     }
     const p = h.precipitation_probability?.[i];
     if (p != null) pMax = pMax === null ? p : Math.max(pMax, p);
+    const g = h.wind_gusts_10m?.[i];
+    if (g != null) gMax = gMax === null ? g : Math.max(gMax, g);
+    const c = h.weather_code?.[i];
+    if (c != null && !codes.includes(c)) codes.push(c);
   }
-  return { wind: wn ? ws / wn : null, temp: tn ? ts / tn : null, pop: pMax };
+  return { wind: wn ? ws / wn : null, temp: tn ? ts / tn : null, pop: pMax, gust: gMax, codes };
 }
 
 /** 3時間ごとの並び。画面の天気欄に出す形にそろえる */
@@ -134,3 +141,71 @@ export function peakGust(h) {
 
 /** 風速の強さ。3m/s と 5m/s で色を変える */
 export const windClass = (v) => (v == null ? "" : v >= 5 ? "strong" : v >= 3 ? "mid" : "");
+
+/* ===== 釣りに向かない天気の注意書き ===== */
+//
+// 🔴 **釣りどきの採点（fishing.js）には混ぜない。** 潮の採点は天気と切り離しておく。
+//    ここで作るのは「その時間帯に行くかどうか」を人が決めるための添え書きだけ。
+// ⚠ しきい値は画面の風の色分け（3・5m/s）を延ばした**目安**で、気象庁の基準ではない。
+//    安全の判断は必ず気象庁の注意報・警報を見ること。
+
+/** 注意書きのしきい値。風は m/s、降水確率は % */
+export const CAUTION = {
+  wind: 5, // 平均風速。軽い仕掛けが流され始める（画面の「強い風」と同じ線）
+  windBad: 7, // 平均風速。投げても仕掛けが立たず、釣りにならない
+  gust: 8, // 最大瞬間。足場の悪いところで危ない
+  gustBad: 10, // 最大瞬間。堤防では体があおられる
+  pop: 70, // 降水確率
+};
+
+const THUNDER = new Set([95, 96, 99]); // 雷雨
+const HEAVY_RAIN = new Set([65, 67, 82]); // 強い雨・激しいにわか雨
+const SNOW = new Set([71, 73, 75, 77, 85, 86]);
+const FOG = new Set([45, 48]);
+
+const one = (v) => v.toFixed(1);
+
+/**
+ * 区間の天気から注意書きを組む。`conditionsOver` の戻り値をそのまま渡す。
+ *
+ * - `avoid` … 行かない判断もある（雷・強風）
+ * - `warn` … 行くなら用心して（風が強め・雨・雪・霧）
+ * - `null` … 出すことはない
+ *
+ * 理由は重い順に並べる。同じ原因で二重に出さない（7m/s のとき 5m/s の文は出さない）。
+ *
+ * @param {{wind:number|null, gust:number|null, pop:number|null, codes:number[]}} a
+ * @returns {{level:"avoid"|"warn"|null, reasons:string[]}}
+ */
+export function cautionOf(a) {
+  const reasons = [];
+  let level = null;
+  const add = (lv, text) => {
+    reasons.push(text);
+    if (lv === "avoid") level = "avoid";
+    else if (!level) level = "warn";
+  };
+
+  const codes = a?.codes || [];
+  const has = (set) => codes.some((c) => set.has(c));
+
+  if (has(THUNDER)) add("avoid", "雷雨の予報。竿は落雷を招きやすいので、鳴り出したら即やめてください");
+
+  if (a?.wind != null) {
+    if (a.wind >= CAUTION.windBad) add("avoid", `風が平均${one(a.wind)}m/s。仕掛けが流されて釣りになりません`);
+    else if (a.wind >= CAUTION.wind) add("warn", `風が平均${one(a.wind)}m/s。軽い仕掛けは流されます`);
+  }
+  if (a?.gust != null) {
+    if (a.gust >= CAUTION.gustBad) add("avoid", `最大瞬間${one(a.gust)}m/s。堤防では体があおられます`);
+    else if (a.gust >= CAUTION.gust) add("warn", `最大瞬間${one(a.gust)}m/s。足場の悪いところは避けてください`);
+  }
+
+  // 強い雨のコードが出ている時間帯は、降水確率を重ねて出さない（同じ雨の話になる）
+  if (has(HEAVY_RAIN)) add("warn", `強い雨の予報${a?.pop != null ? `（降水確率${a.pop}%）` : ""}。足元が滑ります`);
+  else if (a?.pop != null && a.pop >= CAUTION.pop) add("warn", `降水確率${a.pop}%。雨具がないと続けられません`);
+
+  if (has(SNOW)) add("warn", "雪の予報。手がこわばって仕掛けを結べません");
+  if (has(FOG)) add("warn", "霧の予報。視界が悪いので、暗い時間は避けてください");
+
+  return { level, reasons };
+}
