@@ -315,6 +315,84 @@ a {
   font-weight: 700;
   font-size: 16px;
 }
+
+/* 1時間ごとの釣りどき度。
+   🔴 左右の余白はグラフの枠（js/chart.js の PL・PR ＝ 幅360 のうち 24）と同じ比率にする。
+      ずらすとマスの時刻がグラフの目盛りと縦に揃わない */
+.stars .cells {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0 6.6667% 4px;
+  display: grid;
+  grid-template-columns: repeat(24, 1fr);
+  gap: 1px;
+}
+.stars li {
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border-radius: 3px;
+  color: var(--ink-2);
+}
+.stars li.s1 {
+  background: color-mix(in srgb, var(--gold) 6%, transparent);
+  color: var(--muted);
+}
+.stars li.s2 {
+  background: color-mix(in srgb, var(--gold) 18%, transparent);
+}
+.stars li.s3 {
+  background: color-mix(in srgb, var(--gold) 36%, transparent);
+  color: var(--ink);
+}
+.stars li.s4 {
+  background: color-mix(in srgb, var(--gold) 62%, transparent);
+  color: var(--bg);
+}
+/* 明るいテーマの金は暗い茶なので、62% では地が中間の明るさになり、白い字が沈む */
+:root[data-theme="bright"] .stars li.s4 {
+  color: var(--ink);
+}
+.stars li.s5 {
+  background: var(--gold);
+  color: var(--bg);
+}
+/* 天気の印はマスの下に線で出す。マスの中に置くと、暗いテーマで金色の地と見分けがつかない */
+.stars li.warn {
+  box-shadow: 0 4px 0 -1px var(--warn);
+}
+.stars li.avoid {
+  box-shadow: 0 4px 0 -1px var(--alert);
+}
+.stars .cap {
+  font-size: 12.5px;
+  color: var(--muted);
+  padding: 2px 2px 0;
+}
+.stars .cap .wx {
+  display: block;
+}
+.stars .cap .wx[hidden] {
+  display: none;
+}
+/* 凡例の線の見本。マスの下線と同じ色・太さ */
+.stars .cap i {
+  display: inline-block;
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  vertical-align: middle;
+  margin: 0 4px 0 6px;
+}
+.stars .cap i.warn {
+  background: var(--warn);
+}
+.stars .cap i.avoid {
+  background: var(--alert);
+}
 .legend {
   display: flex;
   gap: 14px;

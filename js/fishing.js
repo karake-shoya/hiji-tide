@@ -142,6 +142,33 @@ export function bestSlots(d) {
   return { slots: [], weak: true, extra: extraSlots(d, []) };
 }
 
+/**
+ * 1時間ごとの釣りどき度（★1〜5）の境目。★2〜★5 の下限を並べてある。
+ * 0.52 は本命、0.36 は次点のいちばん下と同じ線。0.70 は本命の強さにマズメが重なった時間。
+ * 🔴 score を段に落とすだけで、新しい採点基準ではない。どの日も同じものさしで比べるため、
+ *    その日の中での相対評価にはしない。マズメが無い時間は score が 0.62 を超えないので★4止まり。
+ */
+export const STAR_CUTS = [0.2, 0.36, 0.52, 0.7];
+
+/** 1時間平均の score → ★の数。境目ちょうどの値は上の段に入れる */
+export const starOf = (avg) => 1 + STAR_CUTS.filter((c) => avg >= c).length;
+
+/**
+ * その日の 0時台〜23時台の釣りどき度。前後の日へは延ばさない。
+ * ⚠ 1時間の平均なので、分単位で区切る釣りどき区間とは食い違うことがある（README 参照）。
+ * @returns {{from:number, avg:number, stars:number}[]} 24本
+ */
+export function hourlyStars(d) {
+  const out = [];
+  for (let h = 0; h < 24; h++) {
+    const from = d.start + h * 3600000;
+    const ps = d.scored.filter((p) => p.ms >= from && p.ms < from + 3600000);
+    const avg = ps.reduce((a, p) => a + p.score, 0) / ps.length;
+    out.push({ from, avg, stars: starOf(avg) });
+  }
+  return out;
+}
+
 /** 本命と次点を時刻順に1本の並びへ。画面とグラフはこれを出す */
 export function allSlots({ slots, extra }) {
   return [...slots, ...(extra || [])].sort((a, b) => a.from - b.from);
