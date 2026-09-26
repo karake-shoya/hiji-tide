@@ -131,7 +131,8 @@ export function renderNow(d, isToday, refMs) {
 }
 
 /* ===== グラフ ===== */
-export function renderChart(d, slots) {
+/** @param {object[]} stars hourlyStars の戻り値。なぞった時刻の★を読むのに使う */
+export function renderChart(d, slots, stars) {
   const box = $("chart");
   const { markup, Y } = drawChart(d, slots);
   box.innerHTML = markup;
@@ -139,14 +140,53 @@ export function renderChart(d, slots) {
   const readout = $("readout");
   // 触っていないときは使い方を出す。潮位の数値はヒーローに出ているので繰り返さない
   const idle = () => {
-    readout.textContent = "グラフを指でなぞると、その時刻の潮位が出ます";
+    readout.textContent = "グラフを指でなぞると、その時刻の潮位と釣りどき度が出ます";
   };
   idle();
   attachScrub(box, d, Y, (info) => {
     if (!info) return idle();
     const ph = tidePhase(d, info.ms);
-    readout.innerHTML = `${fmt(info.ms)} は <b>${Math.round(info.v)}cm</b>${ph ? `・${ph.dir}${ph.bu}分` : ""}`;
+    // 24時ちょうどまでなぞれるので、最後のマスに丸める
+    const s = stars[Math.min(23, Math.floor((info.ms - d.start) / 3600000))];
+    readout.innerHTML = `${fmt(info.ms)} は <b>${Math.round(info.v)}cm</b>${ph ? `・${ph.dir}${ph.bu}分` : ""}・★${s.stars}`;
   });
+}
+
+/* ===== 1時間ごとの釣りどき度 ===== */
+/**
+ * グラフ直下に24マスを並べる。マスの左右の余白はグラフの枠と同じ比率なので、時刻が縦に揃う。
+ * 天気の印は weather.js の取得を待って annotateStars が付ける（通信が落ちても印なしのまま）。
+ * @param {object[]} stars hourlyStars の戻り値
+ */
+export function renderStars(d, stars) {
+  $("stars").innerHTML =
+    `<ol class="cells" aria-label="1時間ごとの釣りどき度（★1〜5）">` +
+    stars
+      .map((s, h) => `<li class="s${s.stars}" data-from="${s.from}" data-h="${h}" aria-label="${h}時台 ★${s.stars}">${s.stars}</li>`)
+      .join("") +
+    `</ol><div class="cap">${termButton("stars", "釣りどき度")} 1時間ごとの目安。5がいちばん良い` +
+    // 色の名前は書かない。明るいテーマでは「用心」の線が黄ではなく茶になるため
+    `<span class="wx" hidden>下線は天気の注意　<i class="warn"></i>用心　<i class="avoid"></i>向かない</span></div>`;
+}
+
+/**
+ * 釣りどき度のマスに、その1時間の天気の注意を印で重ねる。★の数は変えない。
+ * 🔴 注意書きと同じく採点には混ぜない。人が決めるための添え書き。
+ */
+export function annotateStars(h) {
+  let any = false;
+  document.querySelectorAll("#stars li").forEach((el) => {
+    const from = Number(el.dataset.from);
+    const c = cautionOf(conditionsOver(h, from, from + 3600000 - 1));
+    el.classList.remove("warn", "avoid");
+    if (c.level) {
+      el.classList.add(c.level);
+      el.setAttribute("aria-label", `${el.dataset.h}時台 ★${el.textContent}・天気は${c.level === "avoid" ? "釣りに向かない" : "用心"}`);
+      any = true;
+    }
+  });
+  const wx = document.querySelector("#stars .wx");
+  if (wx) wx.hidden = !any;
 }
 
 /* ===== 釣りどきの区間 ===== */

@@ -1,6 +1,6 @@
 // 起動と配線。日付が変わるたびにここから描画をやり直す。
 
-import { dayData, bestSlots, allSlots } from "./fishing.js";
+import { dayData, bestSlots, allSlots, hourlyStars } from "./fishing.js";
 import { tideName } from "./astro.js";
 import { jstMidnight, isoJst, jstParts, dateFromQuery, parseIsoJst, WD } from "./format.js";
 import { loadWeather, cachedWeather } from "./weather.js";
@@ -33,6 +33,7 @@ function updateWeather(d) {
         weatherShownFor = iso;
       }
       view.annotateSlots(h); // 釣りどきは毎回描き直されるので毎回添える
+      view.annotateStars(h); // 釣りどき度のマスも同じ
       drawVerdict(h); // 判定カードにも「荒れます」の一行を足す
       sec.hidden = false;
     })
@@ -63,7 +64,9 @@ function render() {
   drawVerdict();
   view.renderRecall(d, iso);
   view.renderNow(d, isToday, refMs);
-  view.renderChart(d, shown);
+  const stars = hourlyStars(d);
+  view.renderChart(d, shown, stars);
+  view.renderStars(d, stars);
   view.renderBadge(d);
   view.renderSlots(d, shown, weak);
   view.renderTideTable(d);
